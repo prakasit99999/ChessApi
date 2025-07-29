@@ -1,7 +1,7 @@
 
 using Microsoft.AspNetCore.Builder;
 using Microsoft.EntityFrameworkCore;
-using ChessApi.DbContext;
+//using ChessApi.DbContext;
 
 namespace ChessApi
 {
