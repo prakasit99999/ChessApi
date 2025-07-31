@@ -1,4 +1,6 @@
-﻿namespace ChessApi.DTOs.Auth
+﻿using NuGet.Common;
+
+namespace ChessApi.DTOs.Auth
 {
     public class LoginRequest
     {
