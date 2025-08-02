@@ -1,4 +1,5 @@
 ﻿using ChessApi.DTOs.Room;
+using ChessApi.Services.Room;
 namespace ChessApi.Services.Interfaces
 {
     public interface IRoomService

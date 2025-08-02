@@ -10,7 +10,7 @@ namespace ChessApi.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    public class AuthController: ControllerBase
+    public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;
 
@@ -42,7 +42,7 @@ namespace ChessApi.Controllers
             {
                 return BadRequest(new { message = "Registration failed" });
             }
-            return CreatedAtAction(nameof(Login), new { username = response.Username }, response);
+            return CreatedAtAction(nameof(Login), new { username = request.Username }, response);
         }
     }
 }
