@@ -1,15 +1,15 @@
 ﻿using ChessApi.DTOs.Room;
-using ChessApi.Services.Room;
+
 namespace ChessApi.Services.Interfaces
 {
     public interface IRoomService
     {
-        Task<RoomService> CreateRoomAsync(CreateRoomRequest request);
-        Task<RoomService> GetRoomAsync(string roomId);
-        Task<IEnumerable<RoomService>> GetAllRoomsAsync();
-        Task<RoomService> UpdateRoomAsync(string roomId, string RoomName );
-        Task DeleteRoomAsync(string roomId);
-        Task JoinRoomAsync(string roomId, string userId);
-        Task LeaveRoomAsync(string roomId, string userId);
+        Task<RoomDto> CreateRoomAsync(CreateRoomRequest request);
+        Task<RoomDto> GetRoomAsync(int roomId);
+        Task<IEnumerable<RoomDto>> GetAllRoomsAsync();
+        Task<RoomDto> UpdateRoomAsync(int roomId, string roomName);
+        Task DeleteRoomAsync(int roomId);
+        Task JoinRoomAsync(int roomId, int userId);
+        Task LeaveRoomAsync(int roomId, int userId);
     }
 }

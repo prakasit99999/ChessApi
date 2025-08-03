@@ -16,26 +16,10 @@ namespace ChessApi.Services.Game
             _context = context;
         }
 
-        public void StartGame()
-        {
-            // Implementation for starting a game
-        }
 
-        public void EndGame(int gameId, string result, string? reason = null)
+        public async Task<GameResultDto?> GetGameResultAsync(int gameID)
         {
-            var game = _context.games.Find(gameId);
-            if (game != null)
-            {
-                game.result = result;
-                game.result_reason = reason;
-                game.game_status = "Finished";
-                _context.SaveChanges();
-            }
-        }
-
-        public async Task<GameResultDto?> GetGameResultAsync(int gameId)
-        {
-            var game = await _context.games.FirstOrDefaultAsync(g => g.game_id == gameId);
+            var game = await _context.games.FirstOrDefaultAsync(g => g.game_id == gameID);
             if (game == null) return null;
 
             return new GameResultDto
@@ -58,5 +42,48 @@ namespace ChessApi.Services.Game
                 FinishedAt = game.finished_at
             };
         }
+
+        public async Task<bool> FinalizeGameAsync(GameResultDto dto)
+        {
+            var game = await _context.games
+                .Include(g => g.white_player)
+                .Include(g => g.black_player)
+                .FirstOrDefaultAsync(g => g.game_id == dto.GameId);
+
+            if (game == null) return false;
+
+            // อัปเดตสถานะเกม
+            game.result = dto.Result;
+            game.result_reason = dto.ResultReason;
+            game.game_status = "Finished";
+            game.finished_at = DateTime.UtcNow;
+
+            // อัปเดตสถิติผู้เล่น
+            if (game.white_player != null && game.black_player != null)
+            {
+                game.white_player.games_played++;
+                game.black_player.games_played++;
+
+                switch (dto.Result)
+                {
+                    case "white":
+                        game.white_player.games_won++;
+                        game.black_player.games_lost++;
+                        break;
+                    case "black":
+                        game.black_player.games_won++;
+                        game.white_player.games_lost++;
+                        break;
+                    case "draw":
+                        game.white_player.games_drawn++;
+                        game.black_player.games_drawn++;
+                        break;
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
     }
 }

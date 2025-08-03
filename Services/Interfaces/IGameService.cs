@@ -4,8 +4,7 @@ namespace ChessApi.Services.Interfaces
 {
     public interface IGameService
     {
-        void StartGame();
-        void EndGame(int gameId, string result, string? reason = null);
+        Task<bool> FinalizeGameAsync(GameResultDto dto); // รวม EndGame + อัปเดตสถิติ
         Task<GameResultDto?> GetGameResultAsync(int gameId);
     }
 }

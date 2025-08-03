@@ -1,4 +1,5 @@
-﻿using ChessApi.Services.Interfaces;
+﻿using ChessApi.DTOs.Game;
+using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,19 +15,14 @@ namespace ChessApi.Controllers.Game
             _gameService = gameService;
         }
 
-        [HttpPost("start")]
-        public IActionResult StartGame()
+        [HttpPost("end")]
+        public async Task<IActionResult> EndGame([FromBody] GameResultDto dto)
         {
-            _gameService.StartGame();
-            return Ok("Game started successfully.");
+            var result = await _gameService.FinalizeGameAsync(dto);
+            return result ? Ok("Game ended and stats updated.") : BadRequest("Failed to end game.");
         }
 
-        [HttpPost("end/{gameId}")]
-        public IActionResult EndGame(int gameId, [FromBody] string result, [FromQuery] string? reason = null)
-        {
-            _gameService.EndGame(gameId, result, reason);
-            return Ok("Game ended successfully.");
-        }
+
 
         [HttpGet("result/{gameId}")]
         public async Task<IActionResult> GetGameResult(int gameId)
