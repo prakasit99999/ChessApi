@@ -15,12 +15,14 @@ namespace ChessApi.Controllers.Room
         {
             _roomService = roomService;
         }
+
         [HttpPost("create")]
         public async Task<IActionResult> CreateRoom([FromBody] CreateRoomRequest request)
         {
             var result = await _roomService.CreateRoomAsync(request);
             return Ok(result);
         }
+
         // เพิ่ม GetRoom, GetAll, Update, Delete, Join, Leave
         [HttpGet("{roomId}")]
         public async Task<IActionResult> GetRoom(int roomId)
@@ -55,15 +57,29 @@ namespace ChessApi.Controllers.Room
         [HttpPost("{roomId}/join")]
         public async Task<IActionResult> JoinRoom(int roomId, [FromQuery] int userId)
         {
-            await _roomService.JoinRoomAsync(roomId, userId);
-            return Ok();
+            try
+            {
+                await _roomService.JoinRoomAsync(roomId, userId);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
 
         [HttpPost("{roomId}/leave")]
         public async Task<IActionResult> LeaveRoom(int roomId, [FromQuery] int userId)
         {
-            await _roomService.LeaveRoomAsync(roomId, userId);
-            return Ok();
+            try
+            {
+                await _roomService.LeaveRoomAsync(roomId, userId);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
         }
     }
 }

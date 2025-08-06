@@ -1,9 +1,10 @@
+using ChessApi.BackgroundServices;
 using ChessApi.DbContext;
-using ChessApi.Services.Interfaces;
-using Microsoft.AspNetCore.Identity;
 using ChessApi.Models;
-using Microsoft.EntityFrameworkCore;
+using ChessApi.Services.Interfaces;
 using ChessApi.Services.Login;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChessApi
 {
@@ -24,10 +25,13 @@ namespace ChessApi
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
             // Register PasswordHasher and Jwt
             builder.Services.AddScoped<IPasswordHasher<user>, PasswordHasher<user>>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<JwtService>();
+
+            builder.Services.AddHostedService<MatchmakingWorker>();
 
             var app = builder.Build();
             // Configure the HTTP request pipeline.
