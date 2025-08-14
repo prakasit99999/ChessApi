@@ -4,17 +4,22 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <UserSecretsId>1b9bd600-7311-40af-be32-52e3cb287df3</UserSecretsId>
+    <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <DockerfileContext>.</DockerfileContext>
   </PropertyGroup>
 
   <ItemGroup>
 	  <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.11" />
 	  <PackageReference Include="Microsoft.AspNetCore.Identity.UI" Version="8.0.11" />
+	  <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.2.0" />
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
 		  <PrivateAssets>all</PrivateAssets>
 	  </PackageReference>
 	  <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.11">
 		  <PrivateAssets>all</PrivateAssets>
 	  </PackageReference>
+	  <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.22.1" />
 	  <PackageReference Include="Microsoft.VisualStudio.Web.CodeGeneration.Design" Version="8.0.7" />
 	  <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" Version="8.0.0" />
 	  <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
@@ -24,7 +29,6 @@
   <ItemGroup>
     <Folder Include="DbContext\" />
     <Folder Include="Models\" />
-    <Folder Include="Validations\Matchmaking\" />
   </ItemGroup>
 
 </Project>

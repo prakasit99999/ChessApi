@@ -3,6 +3,7 @@ using ChessApi.Models;
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using ChessApi.Validations.Auth;
 using ChessApi.DbContext;
 
 namespace ChessApi.Services.Login
@@ -23,41 +24,78 @@ namespace ChessApi.Services.Login
 
         public async Task<AuthResponse> LoginAsync(LoginRequest request)
         {
-            // TODO: ดึง user จริงจากฐานข้อมูล
-            var user = new user
+            // Validate the request
+            var errors = LoginVaildation.Validate(request);
+            if (errors.Any())
             {
-                username = request.Username,
-                email = request.PasswordHash
-            };
-
-            var result = _passwordHasher.VerifyHashedPassword(user, user.username, request.PasswordHash);
-
-            if (result == PasswordVerificationResult.Success)
-            {
-                var token = _jwtService.GenerateToken(user.user_id, user.username);
-
                 return new AuthResponse
                 {
-                    UserId = user.user_id,
-                    Username = user.username,
-                    Email = user.email,
-                    Token = token
+                    Success = false,
+                    Message = string.Join(", ", errors)
+                };
+            }
+           // ค้นหาผู้ใช้จากฐานข้อมูลจริง
+            var user = await _context.users.FirstOrDefaultAsync(u => u.email == request.Email);
+            if (user == null)
+            {
+                return new  AuthResponse
+                {
+                    Success = false,
+                    Message = "Email not found."
                 };
             }
 
-            return null;
+            // TODO: ตรวจสอบรหัสผ่าน
+            var result = _passwordHasher.VerifyHashedPassword(user, user.password_hash, request.PasswordHash);
+            if (result != PasswordVerificationResult.Success)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Invalid password."
+                };
+            }
+   
+            var token = _jwtService.GenerateToken(user.user_id, user.username);
+            return new AuthResponse
+            {
+                UserId = user.user_id,
+                Username = user.username,
+                Email = user.email,
+                Token = token,
+                Success = true,
+                Message = "Login successful"
+            };
         }
 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
-            var existingUser = await _context.users.FirstOrDefaultAsync(u => u.username == request.Username || u.email == request.Email);
-
-            if (existingUser != null)
+            // Validate the request
+            var errors = RegisteVaildation.Validate(request); 
+            if (errors.Any())
             {
                 return new RegisterResponse
                 {
                     Success = false,
-                    Message = "Username or email already exists."
+                    Message = string.Join(", ", errors)
+                };
+            }
+            var existingEmail = await _context.users.FirstOrDefaultAsync(u => u.email == request.Email);
+            if (existingEmail != null)
+            {
+                return new RegisterResponse
+                {
+                    Success = false,
+                    Message = "Email already exists."
+                };
+            }
+            var existingUsername = await _context.users.FirstOrDefaultAsync(u => u.username == request.Username);
+            if (existingUsername != null)
+            {
+                return new RegisterResponse
+                {
+                    Success = false,
+                    Message = "Username already exists."
                 };
             }
 

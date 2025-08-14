@@ -28,7 +28,7 @@ namespace ChessApi.Services.Matchmaking
         public async Task JoinQueueAsync(JoinQueueRequest request)
         {
             //validation
-            JoinQueueValidator.Validate(request);
+            JoinQueueValidation.Validate(request);
             // Implementation for joining the matchmaking queue
             // This would typically involve adding the user to a queue in the database
             var user = await _context.users.FindAsync(request.Username);
@@ -99,7 +99,7 @@ namespace ChessApi.Services.Matchmaking
         public async Task CancelQueueAsync(CancelQueueRequest request)
         {
             //validation
-             CancelQueueValidator.Validate(request);
+             CancelQueueValidation.Validate(request);
             // Implementation for canceling the matchmaking queue
             var user = await _context.users.FindAsync(request.Username);
             if (user == null)

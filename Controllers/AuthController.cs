@@ -23,26 +23,42 @@ namespace ChessApi.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
             var response = await _authService.LoginAsync(request);
+
             if (response == null)
+                return StatusCode(500, new { message = "Unexpected error.", success = false });
+
+            if (!response.Success)
             {
-                return Unauthorized(new { message = "Invalid credentials" });
+                if (response.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
+                    return Unauthorized(response);
+
+                if (response.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(response);
+
+                return BadRequest(response);
             }
 
             return Ok(response);
         }
+
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
-            if (string.IsNullOrEmpty(request.Username) || string.IsNullOrEmpty(request.Password))
-            {
-                return BadRequest(new { message = "Username and password are required" });
-            }
             var response = await _authService.RegisterAsync(request);
+
             if (response == null)
+                return StatusCode(500, new { message = "Unexpected error.", success = false });
+
+            if (!response.Success)
             {
-                return BadRequest(new { message = "Registration failed" });
+                if (response.Message.Contains("exists", StringComparison.OrdinalIgnoreCase))
+                    return Conflict(response);
+
+                return BadRequest(response);
             }
-            return CreatedAtAction(nameof(Login), new { username = request.Username }, response);
+
+            return CreatedAtAction(nameof(Register), new { id = response.Success }, response);
         }
+
     }
 }
