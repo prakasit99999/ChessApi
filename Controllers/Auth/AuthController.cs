@@ -5,7 +5,7 @@ using ChessApi.Services.Interfaces;
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
-namespace ChessApi.Controllers
+namespace ChessApi.Controllers.Auth
 {
 
     [Route("api/[controller]")]

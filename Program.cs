@@ -4,6 +4,7 @@ using ChessApi.Models;
 using ChessApi.Services.Interfaces;
 using ChessApi.Services.Login;
 using ChessApi.Services.Room;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,13 +27,35 @@ namespace ChessApi
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+            // 🔹 JWT Config
+            var var jwtKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_123"; 
+            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ChessApiIssuer";
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtIssuer,
+                    ValidAudience = jwtIssuer,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
+                };
+            });
+            builder.Services.AddAuthorization();
 
             // Register PasswordHasher and Jwt
             builder.Services.AddScoped<IPasswordHasher<user>, PasswordHasher<user>>();
             builder.Services.AddScoped<IRoomService, RoomService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<JwtService>();
-            
+
             builder.Services.AddHostedService<MatchmakingWorker>();
 
             var app = builder.Build();

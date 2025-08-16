@@ -55,17 +55,24 @@ namespace ChessApi.Services.Login
                     Message = "Invalid password."
                 };
             }
-   
+            // Update last login time
+            user.last_login = DateTime.UtcNow;
+            user.status = "Online";
+            _context.users.Update(user);
+            await _context.SaveChangesAsync();
+
             var token = _jwtService.GenerateToken(user.user_id, user.username);
             return new AuthResponse
             {
                 UserId = user.user_id,
                 Username = user.username,
                 Email = user.email,
+                Status = user.status,
                 Token = token,
                 Success = true,
                 Message = "Login successful"
             };
+
         }
 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)

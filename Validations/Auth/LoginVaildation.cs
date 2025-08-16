@@ -13,13 +13,15 @@ namespace ChessApi.Validations.Auth
             if (request == null)
             {
                 errors.Add("Request cannot be null.");
-                return errors;
             }
             if (string.IsNullOrWhiteSpace(request.Email))
             {
                 errors.Add("Email cannot be null or empty.");
             }
-            
+            if(!request.Email.Contains("@"))
+            {
+                errors.Add("Email must be a valid email address.");
+            }
             if (string.IsNullOrWhiteSpace(request.PasswordHash))
             {
                 errors.Add("Password cannot be null or empty.");

@@ -23,14 +23,19 @@ namespace ChessApi.Validations.Auth
             {
                 errors.Add("Email cannot be null or empty.");
             }
+            if (!request.Email.Contains("@"))
+            {
+                errors.Add("Email must be a valid email address.");
+            }
             if (string.IsNullOrWhiteSpace(request.Password))
             {
                 errors.Add("Password cannot be null or empty.");
             }
-            if (request.Password.Length < 6)
+            if (request.Password.Length < 10)
             {
-                errors.Add("Password must be at least 6 characters long.");
+                errors.Add("Password must be at least 10 characters long.");
             }
+            
             return errors;
         }
     }
