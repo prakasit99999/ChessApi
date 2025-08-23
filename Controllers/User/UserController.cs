@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using ChessApi.DTOs.User;
 using ChessApi.Services.Interfaces;
+using System.Diagnostics;
 
 namespace ChessApi.Controllers.User
 {
@@ -19,7 +20,7 @@ namespace ChessApi.Controllers.User
         [HttpGet("profile")]
         public async Task<IActionResult> GetProfile()
         {
-            var idClaim = User.FindFirst("id"); // claim ที่เราใส่ตอนสร้าง JWT
+            var idClaim = User.FindFirst("id");
             if (idClaim == null)
             {
                 return Unauthorized(new { message = "Invalid token", success = false });
@@ -30,7 +31,11 @@ namespace ChessApi.Controllers.User
                 return BadRequest(new { message = "Invalid user id", success = false });
             }
 
-            var request = new ProfileRequest { UserId = userId };
+            var request = new ProfileRequest{ UserId = userId };
+            if(request.UserId <= 0)
+            {
+                return BadRequest(new { message = "Invalid user id", success = false });
+            }
             var profile = await _userService.GetProfileAsync(request);
 
             if (profile == null)
@@ -49,5 +54,6 @@ namespace ChessApi.Controllers.User
 
             return Ok(profile);
         }
+
     }
 }

@@ -4,8 +4,8 @@ namespace ChessApi.Services.Interfaces
 {
     public interface IMatchmakingService
     {
-        Task JoinQueueAsync(JoinQueueRequest request);
-        Task CancelQueueAsync(CancelQueueRequest request);
-        Task<MatchFoundResponse?> CheckForMatchAsync(string username);
+        Task JoinQueueAsync(JoinQueueDTOs request);
+        Task CancelQueueAsync(CancelQueueDTOs request);
+        Task<MatchFoundDTOs?> CheckForMatchAsync(string username);
     }
 }

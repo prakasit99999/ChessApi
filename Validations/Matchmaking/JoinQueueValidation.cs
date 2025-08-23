@@ -4,7 +4,7 @@ namespace ChessApi.Validations.Matchmaking
 {
     public class JoinQueueValidation
     {
-        public static List<string> Validate(JoinQueueRequest request)
+        public static List<string> Validate(JoinQueueDTOs request)
         {
             var errors = new List<string>();
 

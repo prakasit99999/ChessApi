@@ -2,7 +2,7 @@
 
 namespace ChessApi.DTOs.Matchmaking
 {
-    public class JoinQueueRequest 
+    public class JoinQueueDTOs 
     {
         public string Username { get; set; } = string.Empty; // ต้องระบุเพื่อหา user_id
         public int PreferredTimeControl { get; set; } = 10; // นาที

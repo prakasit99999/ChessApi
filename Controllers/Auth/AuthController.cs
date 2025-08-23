@@ -1,6 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using ChessApi.DTOs.Auth;
+﻿using ChessApi.DTOs.Auth;
 using ChessApi.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
@@ -40,6 +41,30 @@ namespace ChessApi.Controllers.Auth
 
             return Ok(response);
         }
+
+        [Authorize]
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            var userIdClaim = User.FindFirst("id")?.Value;
+            if (userIdClaim == null)
+            {
+                return Unauthorized(new { success = false, message = "Invalid token." });
+            }
+
+            var response = await _authService.LogOutAsync(userIdClaim);
+
+            if (response == null)
+                return StatusCode(500, new { message = "Unexpected error.", success = false });
+
+            if (!response.Success)
+                return BadRequest(response);
+
+            return Ok(response);
+        }
+
+
+
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)

@@ -1,6 +1,6 @@
 ﻿namespace ChessApi.DTOs.Matchmaking
 {
-    public class MatchFoundResponse
+    public class MatchFoundDTOs
     {
         public int GameId { get; set; }
         public string OpponentUsername { get; set; } = string.Empty;

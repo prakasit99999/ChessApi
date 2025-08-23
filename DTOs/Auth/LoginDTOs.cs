@@ -21,6 +21,10 @@ namespace ChessApi.DTOs.Auth
             UserId = userId;
             Username = username;
         }
-
     }
+    public class LogoutRequest
+    {
+        public int UserId { get; set; }
+    }
+       
 }

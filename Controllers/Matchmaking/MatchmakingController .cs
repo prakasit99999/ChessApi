@@ -14,7 +14,7 @@ namespace ChessApi.Controllers.Matchmaking
         [HttpGet("join")]
         public async Task<IActionResult> JoinQueue([FromQuery] string username, [FromQuery] int minRating, [FromQuery] int maxRating, [FromQuery] int preferredTimeControl)
         {
-            var request = new JoinQueueRequest
+            var request = new JoinQueueDTOs
             {
                 Username = username,
                 MinRating = minRating,
@@ -30,7 +30,7 @@ namespace ChessApi.Controllers.Matchmaking
         [HttpGet("cancel")]
         public async Task<IActionResult> CancelQueue([FromQuery] string username)
         {
-            var request = new CancelQueueRequest
+            var request = new CancelQueueDTOs
             {
                 Username = username
             };

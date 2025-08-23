@@ -4,9 +4,12 @@ using ChessApi.Models;
 using ChessApi.Services.Interfaces;
 using ChessApi.Services.Login;
 using ChessApi.Services.Room;
+using ChessApi.Services.Users;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 namespace ChessApi
 {
@@ -26,10 +29,39 @@ namespace ChessApi
             );
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
-            builder.Services.AddSwaggerGen();
+            builder.Services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new() { Title = "Chess API", Version = "v1" });
+
+                c.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                {
+                    Name = "Authorization",
+                    Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+                    Scheme = "bearer",
+                    BearerFormat = "JWT",
+                    In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+                    Description = "ใส่ JWT token โดยพิมพ์: Bearer {your token}"
+                });
+
+                c.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+                 {
+                   {
+                       new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+                         {
+                          Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                          {
+                           Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme,
+                           Id = "Bearer"
+                          }
+                        },
+                       new string[] {}
+                    }
+                });
+            });
+
             // 🔹 JWT Config
-            var var jwtKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_123"; 
-            var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "ChessApiIssuer";
+            var jwtKey = builder.Configuration["JwtSettings:SecretKey"];
+            var jwtIssuer = builder.Configuration["JwtSettings:Issuer"];
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -40,11 +72,10 @@ namespace ChessApi
                 options.TokenValidationParameters = new TokenValidationParameters
                 {
                     ValidateIssuer = true,
-                    ValidateAudience = true,
+                    ValidateAudience = false,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
                     ValidIssuer = jwtIssuer,
-                    ValidAudience = jwtIssuer,
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
                 };
             });
@@ -54,6 +85,7 @@ namespace ChessApi
             builder.Services.AddScoped<IPasswordHasher<user>, PasswordHasher<user>>();
             builder.Services.AddScoped<IRoomService, RoomService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<JwtService>();
 
             builder.Services.AddHostedService<MatchmakingWorker>();
@@ -72,6 +104,7 @@ namespace ChessApi
                 });
             }
             app.UseHttpsRedirection();
+            app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
 

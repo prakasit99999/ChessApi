@@ -55,11 +55,6 @@ namespace ChessApi.Services.Login
                     Message = "Invalid password."
                 };
             }
-            // Update last login time
-            user.last_login = DateTime.UtcNow;
-            user.status = "Online";
-            _context.users.Update(user);
-            await _context.SaveChangesAsync();
 
             var token = _jwtService.GenerateToken(user.user_id, user.username);
             return new AuthResponse
@@ -72,8 +67,42 @@ namespace ChessApi.Services.Login
                 Success = true,
                 Message = "Login successful"
             };
-
         }
+
+        public async Task<AuthResponse> LogOutAsync(string userId)
+        {
+            if (!int.TryParse(userId, out var id))
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "Invalid user id."
+                };
+            }
+
+            var user = await _context.users.FindAsync(id);
+            if (user == null)
+            {
+                return new AuthResponse
+                {
+                    Success = false,
+                    Message = "User not found."
+                };
+            }
+
+            // Update last login time
+            user.last_login = DateTime.UtcNow;
+            user.status = "Offline";
+            _context.users.Update(user);
+            await _context.SaveChangesAsync();
+
+            return new AuthResponse
+            {
+                Success = true,
+                Message = "Logout successful"
+            };
+        }
+
 
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {

@@ -25,7 +25,7 @@ namespace ChessApi.Services.Matchmaking
             _roomService = roomService;
         }
 
-        public async Task JoinQueueAsync(JoinQueueRequest request)
+        public async Task JoinQueueAsync(JoinQueueDTOs request)
         {
             //validation
             JoinQueueValidation.Validate(request);
@@ -96,7 +96,7 @@ namespace ChessApi.Services.Matchmaking
         }
     
 
-        public async Task CancelQueueAsync(CancelQueueRequest request)
+        public async Task CancelQueueAsync(CancelQueueDTOs request)
         {
             //validation
              CancelQueueValidation.Validate(request);
@@ -123,7 +123,7 @@ namespace ChessApi.Services.Matchmaking
 
         }
 
-        public async Task<MatchFoundResponse?> CheckForMatchAsync(string username)
+        public async Task<MatchFoundDTOs?> CheckForMatchAsync(string username)
         {
             //validation
             if (string.IsNullOrEmpty(username))
@@ -151,7 +151,7 @@ namespace ChessApi.Services.Matchmaking
                 ? game.black_player_id 
                 : game.white_player_id;
             var opponent = await _context.users.FindAsync(opponentId);
-            return new MatchFoundResponse
+            return new MatchFoundDTOs
             {
                 OpponentUsername = opponent?.username,
                 GameId = game.game_id,
