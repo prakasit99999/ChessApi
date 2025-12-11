@@ -1,10 +1,10 @@
-using ChessApi.BackgroundServices;
 using ChessApi.DbContext;
 using ChessApi.Models;
 using ChessApi.Services.Interfaces;
 using ChessApi.Services.Login;
-using ChessApi.Services.Room;
+using ChessApi.Services.Matchmaking;
 using ChessApi.Services.Users;
+using ChessApi.Services.AiPerformance;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -83,19 +83,19 @@ namespace ChessApi
 
             // Register PasswordHasher and Jwt
             builder.Services.AddScoped<IPasswordHasher<user>, PasswordHasher<user>>();
-            builder.Services.AddScoped<IRoomService, RoomService>();
-            builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IUserService, UserService>();
+            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IMatchmakingService, MatchmakingService>();
+            builder.Services.AddScoped<IAiPerformance, AiPerformanceService>();
             builder.Services.AddScoped<JwtService>();
 
-            builder.Services.AddHostedService<MatchmakingWorker>();
+            //builder.Services.AddHostedService<MatchmakingWorker>();
 
             var app = builder.Build();
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-                //app.UseSwagger();
-                //app.UseSwaggerUI();
+              
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {

@@ -1,15 +1,15 @@
-﻿using ChessApi.DbContext;
+﻿//using ChessApi.DbContext;
 using ChessApi.DTOs.Auth;
 
 namespace ChessApi.Validations.Auth
 {
     public class RegisteVaildation
     {
-        private readonly ChessDbContext _context;
-        public RegisteVaildation(ChessDbContext context)
-        {
-            _context = context;
-        }
+        //private readonly ChessDbContext _context;
+        //public RegisteVaildation(ChessDbContext context)
+        //{
+        //    _context = context;
+        //}
 
         public static List<string> Validate(RegisterRequest request)
         {

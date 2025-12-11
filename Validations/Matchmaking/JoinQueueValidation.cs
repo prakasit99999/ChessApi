@@ -20,10 +20,6 @@ namespace ChessApi.Validations.Matchmaking
             {
                 errors.Add("MinRating cannot be greater than MaxRating.");
             }
-            if (request.PreferredTimeControl <= 0)
-            {
-                errors.Add("PreferredTimeControl must be a positive number.");
-            }
             return errors;
         }
     }

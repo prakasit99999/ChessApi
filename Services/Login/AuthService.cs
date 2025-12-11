@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using ChessApi.Validations.Auth;
 using ChessApi.DbContext;
 
+
 namespace ChessApi.Services.Login
 {
     public class AuthService : IAuthService
@@ -14,8 +15,7 @@ namespace ChessApi.Services.Login
         private readonly JwtService _jwtService;
         private readonly ChessDbContext _context;
 
-
-        public AuthService(IPasswordHasher<user> passwordHasher, JwtService jwtService, ChessDbContext context)
+        public AuthService(IPasswordHasher<user> passwordHasher, JwtService jwtService, ChessDbContext  context)
         {
             _passwordHasher = passwordHasher;
             _jwtService = jwtService;
@@ -34,11 +34,11 @@ namespace ChessApi.Services.Login
                     Message = string.Join(", ", errors)
                 };
             }
-           // ค้นหาผู้ใช้จากฐานข้อมูลจริง
+            // ค้นหาผู้ใช้จากฐานข้อมูลจริง
             var user = await _context.users.FirstOrDefaultAsync(u => u.email == request.Email);
             if (user == null)
             {
-                return new  AuthResponse
+                return new AuthResponse
                 {
                     Success = false,
                     Message = "Email not found."
@@ -91,7 +91,6 @@ namespace ChessApi.Services.Login
             }
 
             // Update last login time
-            user.last_login = DateTime.UtcNow;
             user.status = "Offline";
             _context.users.Update(user);
             await _context.SaveChangesAsync();
@@ -107,7 +106,7 @@ namespace ChessApi.Services.Login
         public async Task<RegisterResponse> RegisterAsync(RegisterRequest request)
         {
             // Validate the request
-            var errors = RegisteVaildation.Validate(request); 
+            var errors = RegisteVaildation.Validate(request);
             if (errors.Any())
             {
                 return new RegisterResponse
@@ -150,7 +149,7 @@ namespace ChessApi.Services.Login
 
             var token = _jwtService.GenerateToken(user.user_id, user.username);
 
-            return new RegisterResponse 
+            return new RegisterResponse
             {
                 Success = true,
                 Message = "Registration successful."

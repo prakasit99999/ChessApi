@@ -11,16 +11,21 @@ namespace ChessApi.Controllers.Matchmaking
     public class MatchmakingController : ControllerBase
     {
         private readonly IMatchmakingService _matchmakingService;
+
+        public MatchmakingController(IMatchmakingService matchmakingService)
+        {
+            _matchmakingService = matchmakingService;
+        }
+       
         [HttpGet("join")]
         public async Task<IActionResult> JoinQueue([FromQuery] string username, [FromQuery] int minRating, [FromQuery] int maxRating, [FromQuery] int preferredTimeControl)
         {
             var request = new JoinQueueDTOs
             {
                 Username = username,
-                MinRating = minRating,
+                MinRating = minRating, 
                 MaxRating = maxRating,
-                PreferredTimeControl = preferredTimeControl
-            };
+            };   
 
             await _matchmakingService.JoinQueueAsync(request);
             return Ok(new { message = "Joined matchmaking queue successfully." });

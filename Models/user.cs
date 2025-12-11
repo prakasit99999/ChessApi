@@ -1,16 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace ChessApi.Models;
 
+[Index("email", Name = "email", IsUnique = true)]
+[Index("username", Name = "username", IsUnique = true)]
 public partial class user
 {
+    [Key]
     public int user_id { get; set; }
 
+    [StringLength(50)]
     public string username { get; set; } = null!;
 
+    [StringLength(100)]
     public string? email { get; set; }
 
+    [Column(TypeName = "text")]
     public string password_hash { get; set; } = null!;
 
     public int? rating { get; set; }
@@ -23,31 +32,24 @@ public partial class user
 
     public int? games_drawn { get; set; }
 
-    public DateTime? created_at { get; set; }
-
-    public DateTime? last_login { get; set; }
-
+    [Column(TypeName = "enum('offline','online','playing')")]
     public string? status { get; set; }
 
+    [Column(TypeName = "timestamp")]
+    public DateTime? created_at { get; set; }
+
+    [InverseProperty("user1")]
     public virtual ICollection<friendship> friendshipuser1s { get; set; } = new List<friendship>();
 
+    [InverseProperty("user2")]
     public virtual ICollection<friendship> friendshipuser2s { get; set; } = new List<friendship>();
 
-    public virtual ICollection<game_invitation> game_invitationfrom_users { get; set; } = new List<game_invitation>();
-
-    public virtual ICollection<game_invitation> game_invitationto_users { get; set; } = new List<game_invitation>();
-
-    public virtual ICollection<game_room> game_rooms { get; set; } = new List<game_room>();
-
+    [InverseProperty("black_player")]
     public virtual ICollection<game> gameblack_players { get; set; } = new List<game>();
 
+    [InverseProperty("white_player")]
     public virtual ICollection<game> gamewhite_players { get; set; } = new List<game>();
 
+    [InverseProperty("user")]
     public virtual ICollection<matchmaking_queue> matchmaking_queues { get; set; } = new List<matchmaking_queue>();
-
-    public virtual ICollection<room_chat_message> room_chat_messages { get; set; } = new List<room_chat_message>();
-
-    public virtual ICollection<room_participant> room_participants { get; set; } = new List<room_participant>();
-
-    public virtual ICollection<user_statistic> user_statistics { get; set; } = new List<user_statistic>();
 }

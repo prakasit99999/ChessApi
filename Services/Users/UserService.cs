@@ -32,7 +32,7 @@ namespace ChessApi.Services.Users
                 GamesWon = (int)user.games_won,
                 GamesLost = (int)user.games_lost,
                 GamesDrawn = (int)user.games_drawn,
-                Status = user.status ?? "offline", 
+                Status = user.status ?? "offline",
                 Success = true,
                 Message = "Profile retrieved successfully"
             };
