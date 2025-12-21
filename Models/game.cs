@@ -32,7 +32,7 @@ public partial class game
     [Column(TypeName = "enum('white_wins','black_wins','draw','stalemate','abandoned')")]
     public string? result { get; set; }
 
-    [Column(TypeName = "enum('checkmate','stalemate','draw_agreement','timeout','insufficient_material','fifty_move_rule','threefold_repetition')")]
+    [Column(TypeName = "enum('checkmate','stalemate','draw_agreement','timeout','insufficient_material','fifty_move_rule','threefold_repetition','resignation','abandoned','game_aborted_early','disconnected','system_terminated')")]
     public string? result_reason { get; set; }
 
     public int? move_count { get; set; }

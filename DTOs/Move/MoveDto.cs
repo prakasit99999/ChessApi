@@ -52,9 +52,12 @@
 
         public enum algorithmType
         {
+            None,
             Minimax,
             AlphaBeta,
         }
+
+
 
         public class MoveRequest
         {
@@ -86,6 +89,10 @@
             public int aiNodesEvaluated { get; set; }
             public int moveTimeMilliseconds { get; set; }
 
+        }
+        public class MoveBatchRequest
+        {
+            public List<MoveRequest> moves { get; set; }
         }
 
     }

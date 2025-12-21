@@ -1,15 +1,17 @@
+using System.Text;
 using ChessApi.DbContext;
 using ChessApi.Models;
+using ChessApi.Services.AiPerformance;
+using ChessApi.Services.Game;
 using ChessApi.Services.Interfaces;
 using ChessApi.Services.Login;
 using ChessApi.Services.Matchmaking;
+using ChessApi.Services.Move;
 using ChessApi.Services.Users;
-using ChessApi.Services.AiPerformance;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using System.Text;
 
 namespace ChessApi
 {
@@ -27,7 +29,10 @@ namespace ChessApi
                    new MySqlServerVersion(new Version(8, 0, 37))
                 )
             );
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(options =>
+                {
+                    options.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+                });
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen(c =>
             {
@@ -87,15 +92,16 @@ namespace ChessApi
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IMatchmakingService, MatchmakingService>();
             builder.Services.AddScoped<IAiPerformance, AiPerformanceService>();
+            builder.Services.AddScoped<IGameService, GameService>();
+            builder.Services.AddScoped<IMoveService, MoveService>();
             builder.Services.AddScoped<JwtService>();
 
-            //builder.Services.AddHostedService<MatchmakingWorker>();
 
             var app = builder.Build();
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
-              
+
                 app.UseSwagger();
                 app.UseSwaggerUI(c =>
                 {
