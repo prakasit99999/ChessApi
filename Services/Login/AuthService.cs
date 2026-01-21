@@ -56,6 +56,9 @@ namespace ChessApi.Services.Login
                 };
             }
 
+            user.status = "online";
+            await _context.SaveChangesAsync();
+
             var token = _jwtService.GenerateToken(user.user_id, user.username);
             return new AuthResponse
             {
@@ -124,7 +127,7 @@ namespace ChessApi.Services.Login
                     Message = "Email already exists."
                 };
             }
-            var existingUsername = await _context.users.FirstOrDefaultAsync(u => u.username == request.Username);
+            var existingUsername = await _context.users.FirstOrDefaultAsync(u => u.username.ToLower() == request.Username.ToLower());
             if (existingUsername != null)
             {
                 return new RegisterResponse

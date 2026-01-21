@@ -1,4 +1,4 @@
-﻿using ChessApi.DTOs.Game;
+﻿﻿using ChessApi.DTOs.Game;
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using static ChessApi.DTOs.Game.MoveDto;
@@ -70,6 +70,17 @@ namespace ChessApi.Controllers.Move
                 Success = successCount,
                 Failed = failCount
             });
+        }
+
+        [HttpGet("latest/{gameId}")]
+        public async Task<IActionResult> GetLatestMove(int gameId)
+        {
+            var result = await _moveService.GetLatestMoveAsync(gameId);
+            if (result == null)
+            {
+                return NotFound(new { Message = "No moves found for this game." });
+            }
+            return Ok(result);
         }
     }
 }

@@ -2,8 +2,6 @@
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace ChessApi.Controllers.Matchmaking
 {
     [Route("api/[controller]")]
@@ -16,44 +14,45 @@ namespace ChessApi.Controllers.Matchmaking
         {
             _matchmakingService = matchmakingService;
         }
-       
+
         [HttpGet("join")]
-        public async Task<IActionResult> JoinQueue([FromQuery] string username, [FromQuery] int minRating, [FromQuery] int maxRating, [FromQuery] int preferredTimeControl)
+        public async Task<IActionResult> JoinQueue([FromQuery] string username, [FromQuery] int minRating, [FromQuery] int maxRating)
         {
             var request = new JoinQueueDTOs
             {
                 Username = username,
-                MinRating = minRating, 
+                MinRating = minRating,
                 MaxRating = maxRating,
-            };   
-
-            await _matchmakingService.JoinQueueAsync(request);
-            return Ok(new { message = "Joined matchmaking queue successfully." });
-        }
-
-
-        [HttpGet("cancel")]
-        public async Task<IActionResult> CancelQueue([FromQuery] string username)
-        {
-            var request = new CancelQueueDTOs
-            {
-                Username = username
             };
-            // Call the matchmaking service to cancel the queue
-            await _matchmakingService.CancelQueueAsync(request);
-            return Ok(new { message = "Cancelled matchmaking queue successfully." });
+
+            // รับผลลัพธ์ทันที (เผื่อจับคู่ได้เลย)
+            var matchResult = await _matchmakingService.JoinQueueAsync(request);
+
+            if (matchResult != null)
+            {
+                return Ok(new { message = "Match found immediately!", matchDetails = matchResult });
+            }
+
+            return Ok(new { message = "Joined matchmaking queue. Please poll /check to find a match." });
         }
 
         [HttpGet("check")]
         public async Task<IActionResult> CheckForMatch([FromQuery] string username)
         {
-            // Call the matchmaking service to check for a match
-            var matchFound = _matchmakingService.CheckForMatchAsync(username).GetAwaiter().GetResult();
+            var matchFound = await _matchmakingService.CheckForMatchAsync(username);
+            
             if (matchFound != null)
             {
-                return Ok(new { message = "Match found!", MatchDetails = matchFound });
+                return Ok(new { message = "Match found!", matchDetails = matchFound });
             }
-            return NotFound(new { message = "No match found." });
+            return NotFound(new { message = "Still searching..." });
+        }
+
+        [HttpGet("cancel")]
+        public async Task<IActionResult> CancelQueue([FromQuery] string username)
+        {
+            await _matchmakingService.CancelQueueAsync(new CancelQueueDTOs { Username = username });
+            return Ok(new { message = "Cancelled matchmaking queue successfully." });
         }
     }
 }

@@ -57,8 +57,6 @@
             AlphaBeta,
         }
 
-
-
         public class MoveRequest
         {
 
@@ -84,15 +82,33 @@
             public bool IsPawnTwoStep { get; set; }
             public bool PieceHasMovedBefore { get; set; }
 
-            public decimal aiEvaluationScore { get; set; }
+            public int aiEvaluationScore { get; set; }
             public int aiDepthSearched { get; set; }
             public int aiNodesEvaluated { get; set; }
             public int moveTimeMilliseconds { get; set; }
 
         }
+
         public class MoveBatchRequest
         {
             public List<MoveRequest> moves { get; set; }
+        }
+
+        public class LatestMoveResponseDto
+        {
+            public int MoveNumber { get; set; }
+
+            // ส่งพิกัดแบบตัวเลข (0-7) เพื่อให้ Unity ใช้งานง่ายกับ Array
+            public int StartX { get; set; }
+            public int StartY { get; set; }
+            public int EndX { get; set; }
+            public int EndY { get; set; }
+
+            // ส่งแบบ String ("e2", "e4") เผื่อใช้แสดงผลหรือ Log
+            public string FromPosition { get; set; } = string.Empty;
+            public string ToPosition { get; set; } = string.Empty;
+
+            public string PlayerTurn { get; set; } = string.Empty; // "White" or "Black"
         }
 
     }

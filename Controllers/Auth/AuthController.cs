@@ -3,9 +3,7 @@ using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
-
 // For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
-
 namespace ChessApi.Controllers.Auth
 {
 
@@ -62,9 +60,6 @@ namespace ChessApi.Controllers.Auth
 
             return Ok(response);
         }
-
-
-
 
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)

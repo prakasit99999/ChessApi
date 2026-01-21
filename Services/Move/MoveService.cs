@@ -1,4 +1,4 @@
-﻿using ChessApi.DbContext;
+﻿﻿using ChessApi.DbContext;
 using ChessApi.DTOs.Game;
 using ChessApi.Models;
 using ChessApi.Services.Interfaces;
@@ -95,6 +95,28 @@ namespace ChessApi.Services.Move
 
             await _context.SaveChangesAsync();
             return true;
+        }
+
+        public async Task<MoveDto.LatestMoveResponseDto?> GetLatestMoveAsync(int gameId)
+        {
+            var lastMove = await _context.moves
+                .Where(m => m.game_id == gameId)
+                .OrderByDescending(m => m.move_number)
+                .FirstOrDefaultAsync();
+
+            if (lastMove == null) return null;
+
+            return new MoveDto.LatestMoveResponseDto
+            {
+                MoveNumber = lastMove.move_number,
+                StartX = lastMove.start_x,
+                StartY = lastMove.start_y,
+                EndX = lastMove.end_x,
+                EndY = lastMove.end_y,
+                FromPosition = $"{(char)('a' + lastMove.start_x)}{lastMove.start_y + 1}",
+                ToPosition = $"{(char)('a' + lastMove.end_x)}{lastMove.end_y + 1}",
+                PlayerTurn = lastMove.team
+            };
         }
     }
 }

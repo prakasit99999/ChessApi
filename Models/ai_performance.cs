@@ -21,7 +21,7 @@ public partial class ai_performance
     [Column(TypeName = "enum('minimax','alpha_beta')")]
     public string? algorithm_type { get; set; }
 
-    [Precision(5, 2)]
+    [Precision(10, 2)]
     public decimal? average_depth { get; set; }
 
     public int? average_nodes_evaluated { get; set; }

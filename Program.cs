@@ -8,6 +8,7 @@ using ChessApi.Services.Login;
 using ChessApi.Services.Matchmaking;
 using ChessApi.Services.Move;
 using ChessApi.Services.Users;
+using ChessApi.Services.Social;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -86,7 +87,7 @@ namespace ChessApi
             });
             builder.Services.AddAuthorization();
 
-            // Register PasswordHasher and Jwt
+        
             builder.Services.AddScoped<IPasswordHasher<user>, PasswordHasher<user>>();
             builder.Services.AddScoped<IUserService, UserService>();
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -94,8 +95,19 @@ namespace ChessApi
             builder.Services.AddScoped<IAiPerformance, AiPerformanceService>();
             builder.Services.AddScoped<IGameService, GameService>();
             builder.Services.AddScoped<IMoveService, MoveService>();
-            builder.Services.AddScoped<JwtService>();
+            builder.Services.AddScoped<ISocialService, SocialService>();
+            builder.Services.AddScoped<JwtService>();    // Register PasswordHasher and Jwt
 
+            //  CORS Config 
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowAll", policy =>
+                {
+                    policy.AllowAnyOrigin()
+                          .AllowAnyMethod()
+                          .AllowAnyHeader();
+                });
+            });
 
             var app = builder.Build();
             // Configure the HTTP request pipeline.
@@ -110,10 +122,10 @@ namespace ChessApi
                 });
             }
             app.UseHttpsRedirection();
+            app.UseCors("AllowAll");
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
-
             app.Run();
         }
     }

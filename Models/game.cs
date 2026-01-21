@@ -26,13 +26,13 @@ public partial class game
     [Column(TypeName = "enum('human','ai_easy','ai_medium','ai_hard')")]
     public string black_player_type { get; set; } = null!;
 
-    [Column(TypeName = "enum('in_progress','finished','abandoned')")]
+    [Column(TypeName = "enum('waiting','in_progress','paused','finished','abandoned','aborted','disconnected','active')")]
     public string? game_status { get; set; }
 
     [Column(TypeName = "enum('white_wins','black_wins','draw','stalemate','abandoned')")]
     public string? result { get; set; }
 
-    [Column(TypeName = "enum('checkmate','stalemate','draw_agreement','timeout','insufficient_material','fifty_move_rule','threefold_repetition','resignation','abandoned','game_aborted_early','disconnected','system_terminated')")]
+    [Column(TypeName = "enum('Checkmate','Stalemate','DrawAgreement','Timeout','InsufficientMaterial','FiftyMoveRule','ThreefoldRepitition','Resignation','Abandoned','GameAbortedEarly','Disconnected','SystemTerminated')")]
     public string? result_reason { get; set; }
 
     public int? move_count { get; set; }

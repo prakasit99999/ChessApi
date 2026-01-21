@@ -22,25 +22,30 @@ namespace ChessApi.Services.Game
         {
             int? whiteId = dto.WhitePlayerId;
             int? blackId = dto.BlackPlayerId;
+            string status = "in_progress";
+
+            // Normalize IDs: ถ้า ID <= 0 ให้เป็น null (Guest)
+            if (whiteId <= 0) whiteId = null;
+            if (blackId <= 0) blackId = null;
 
             switch (dto.GameType.ToLower())
             {
-                case "single_player":
-                    if (whiteId <= 0) whiteId = null;
+                case "online_multiplayer":
+                    // Online: WhiteId มาจาก Controller (User), BlackId เป็น null (รอคน Join)
                     blackId = null;
+                    status = "waiting_for_opponent";
                     break;
+
+                case "single_player":
                 case "ai_vs_ai":
                 case "local_multiplayer":
-                    whiteId = null;
+                    // Offline: WhiteId (User/Guest), BlackId (AI/Guest -> null)
+                    // เริ่มเกมได้เลย
                     blackId = null;
+                    status = "in_progress";
                     break;
-                case "online_multiplayer":
-                    if (whiteId <= 0 || blackId <= 0)
-                        throw new Exception("Online Multiplayer requires valid User IDs.");
-                    break;
+
                 default:
-                    if (whiteId <= 0) whiteId = null;
-                    if (blackId <= 0) blackId = null;
                     break;
             }
 
@@ -49,7 +54,7 @@ namespace ChessApi.Services.Game
                 game_type = dto.GameType,
                 white_player_type = dto.WhitePlayerType,
                 black_player_type = dto.BlackPlayerType,
-                game_status = "in_progress",
+                game_status = status,
                 move_count = 0,
                 created_at = DateTime.UtcNow,
                 started_at = DateTime.UtcNow,

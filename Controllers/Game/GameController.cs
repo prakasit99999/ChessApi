@@ -1,7 +1,8 @@
-﻿using ChessApi.DTOs.Game;
+﻿﻿using ChessApi.DTOs.Game;
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace ChessApi.Controllers.Game
@@ -21,21 +22,49 @@ namespace ChessApi.Controllers.Game
         [HttpPost("start")]
         public async Task<IActionResult> StartGame([FromBody] GameCreateDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             try
             {
-                // เรียก Service สร้างเกม
+                // TODO: SECURITY CHECK (ดักจับเรื่อง Token )
+                // ดึง User ID จาก Token (ถ้ามี)
+                int? userIdFromToken = null;
+                if (User.Identity.IsAuthenticated)
+                {
+                    var idClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (int.TryParse(idClaim, out int id))
+                    {
+                        userIdFromToken = id;
+                    }
+                }
+
+                // กรณี 1: ถ้าเป็น Online Multiplayer -> บังคับต้องมี Token
+                if (dto.GameType == "online_multiplayer")
+                {
+                    if (userIdFromToken == null)
+                    {
+                        return Unauthorized(new { Error = "Online mode requires login (Token is missing or invalid)." });
+                    }
+
+                    // Auto-fill ID จาก Token เพื่อความชัวร์ และป้องกันการสวมรอย
+                    dto.WhitePlayerId = userIdFromToken;
+                }
+                // กรณี 2: ถ้าเป็น Single Player / Local -> ถ้ามี Token ก็ใส่ ID ให้ ถ้าไม่มีก็เป็น null
+                else
+                {
+
+                    // ถ้าไม่ได้ล็อกอิน -> เล่นแบบ Guest
+                    dto.WhitePlayerId = null;
+                    // โหมด Offline ไม่ต้องมี BlackPlayerId (AI หรือ Local)
+                    dto.BlackPlayerId = null;
+                }
+
                 var gameId = await _gameService.CreateGameAsync(dto);
 
-                // ส่ง gameId กลับไปเป็น JSON
-                return Ok(new 
-                { 
-                    Message = "Game started successfully", 
-                    GameId = gameId 
+                return Ok(new
+                {
+                    Message = "Game started successfully",
+                    GameId = gameId,
+                    Mode = dto.GameType
                 });
             }
             catch (Exception ex)
@@ -69,7 +98,7 @@ namespace ChessApi.Controllers.Game
                 return StatusCode(500, new { Error = ex.Message });
             }
         }
-       
+
         //  3. Resign / Abort: ปรับ Response ให้เป็น JSON มาตรฐาน
         [HttpPost("resign")]
         public async Task<IActionResult> ResignGame([FromBody] GameResignDto dto)
@@ -77,7 +106,7 @@ namespace ChessApi.Controllers.Game
             try
             {
                 var result = await _gameService.ResignGameAsync(dto.GameId, dto.PlayerId, dto.Reason);
-                
+
                 if (result)
                 {
                     // ✅ ปรับเป็น JSON เพื่อให้ Unity อ่านง่าย
@@ -99,7 +128,7 @@ namespace ChessApi.Controllers.Game
         public async Task<IActionResult> GetGameResult(int gameId)
         {
             var gameResult = await _gameService.GetGameResultAsync(gameId);
-            
+
             if (gameResult == null)
             {
                 return NotFound(new { Error = "Game result not found." });
@@ -113,7 +142,7 @@ namespace ChessApi.Controllers.Game
         public async Task<IActionResult> GetGameStatus(int gameId)
         {
             var gameResult = await _gameService.GetGameResultAsync(gameId);
-            
+
             if (gameResult == null)
             {
                 return NotFound(new { Error = "Game status not found." });
@@ -123,7 +152,7 @@ namespace ChessApi.Controllers.Game
             {
                 GameId = gameResult.GameId,
                 GameType = gameResult.GameType,
-                Status = gameResult.Result ?? "In Progress", // ถ้ายังไม่จบ Result จะเป็น null
+                Status = gameResult.Result ?? "in_progress", // ถ้ายังไม่จบ Result จะเป็น null
                 MoveCount = gameResult.MoveCount,
                 CreatedAt = gameResult.CreatedAt
             });
