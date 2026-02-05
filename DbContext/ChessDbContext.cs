@@ -19,8 +19,6 @@ public partial class ChessDbContext : Microsoft.EntityFrameworkCore.DbContext
 
     public virtual DbSet<ai_performance> ai_performances { get; set; }
 
-    public virtual DbSet<friendship> friendships { get; set; }
-
     public virtual DbSet<game> games { get; set; }
 
     public virtual DbSet<game_state> game_states { get; set; }
@@ -50,22 +48,6 @@ public partial class ChessDbContext : Microsoft.EntityFrameworkCore.DbContext
             entity.HasOne(d => d.game).WithMany(p => p.ai_performances)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("ai_performance_ibfk_1");
-        });
-
-        modelBuilder.Entity<friendship>(entity =>
-        {
-            entity.HasKey(e => e.friendship_id).HasName("PRIMARY");
-
-            entity.Property(e => e.created_at).HasDefaultValueSql("CURRENT_TIMESTAMP");
-            entity.Property(e => e.status).HasDefaultValueSql("'pending'");
-
-            entity.HasOne(d => d.user1).WithMany(p => p.friendshipuser1s)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("friendships_ibfk_1");
-
-            entity.HasOne(d => d.user2).WithMany(p => p.friendshipuser2s)
-                .OnDelete(DeleteBehavior.ClientSetNull)
-                .HasConstraintName("friendships_ibfk_2");
         });
 
         modelBuilder.Entity<game>(entity =>

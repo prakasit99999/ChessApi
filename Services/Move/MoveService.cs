@@ -21,9 +21,6 @@ namespace ChessApi.Services.Move
             var game = await _context.games.FirstOrDefaultAsync(g => g.game_id == dto.GameId);
 
             if (game == null) return false;
-            // หมายเหตุ: ถ้าอยากให้บันทึกได้แม้จบเกมแล้ว ให้ลบเงื่อนไข game_status ออก
-            // if (game.game_status != "in_progress" && game.game_status != null) return false;
-
             // 2. แปลง Algorithm Type ให้ตรงกับ Database Enum ('minimax', 'alpha_beta')
             string? algoString = null;// default
             if (dto.AlgorithmType == MoveDto.algorithmType.AlphaBeta) algoString = "alpha_beta";
@@ -36,10 +33,11 @@ namespace ChessApi.Services.Move
                 move_number = dto.MoveNumber,
 
                 // พิกัด
-                start_x = (sbyte)dto.startX,
-                start_y = (sbyte)dto.startY,
-                end_x = (sbyte)dto.endX,
-                end_y = (sbyte)dto.endY,
+                start_x = (sbyte)dto.StartX,
+                start_y = (sbyte)dto.StartY,
+                end_x = (sbyte)dto.EndX,
+                end_y = (sbyte)dto.EndY,
+
 
                 // ตัวหมากและทีม (แปลง Enum เป็นตัวเล็ก)
                 piece_type = dto.PieceType.ToString().ToLower(),
@@ -52,8 +50,8 @@ namespace ChessApi.Services.Move
                 captured_piece_team = dto.CapturedPieceTeam == MoveDto.capturedPicecTeam.None
                                       ? null : dto.CapturedPieceTeam.ToString().ToLower(),
 
-                captured_x = dto.IsCapture ? (sbyte?)dto.capturedX : null,
-                captured_y = dto.IsCapture ? (sbyte?)dto.capturedY : null,
+                captured_x = dto.IsCapture ? (sbyte?)dto.CapturedX : null,
+                captured_y = dto.IsCapture ? (sbyte?)dto.CapturedY : null,
 
                 // การเลื่อนยศ
                 promoted_from = dto.PromotedFrom == MoveDto.promotedFrom.None
@@ -62,15 +60,15 @@ namespace ChessApi.Services.Move
                               ? null : dto.PromotedTo.ToString().ToLower(),
 
                 // ถ้ามีการเลื่อนยศ พิกัดคือจุดสิ้นสุด
-                promoted_x = dto.PromotedTo != MoveDto.promotedTo.None ? (sbyte?)dto.endX : null,
-                promoted_y = dto.PromotedTo != MoveDto.promotedTo.None ? (sbyte?)dto.endY : null,
+                promoted_x = dto.PromotedTo != MoveDto.promotedTo.None ? (sbyte?)dto.EndX : null,
+                promoted_y = dto.PromotedTo != MoveDto.promotedTo.None ? (sbyte?)dto.EndY : null,
 
                 // En Passant (สมมติว่าตำแหน่งที่กินคือ EnPassant target)
-                enpassant_x = dto.IsEnPassant ? (sbyte?)dto.endX : null,
-                enpassant_y = dto.IsEnPassant ? (sbyte?)dto.endY : null,
+                enpassant_x = dto.IsEnPassant ? (sbyte?)dto.EndX : null,
+                enpassant_y = dto.IsEnPassant ? (sbyte?)dto.EndY : null,
 
                 // Flags (สังเกตชื่อตัวแปร IsCasting ตาม DTO ของคุณ)
-                is_castling = dto.IsCasting,
+                is_castling = dto.IsCastling,
                 is_en_passant = dto.IsEnPassant,
                 is_capture = dto.IsCapture,
                 is_check = dto.IsCheck,
@@ -79,10 +77,10 @@ namespace ChessApi.Services.Move
 
                 // AI Stats
                 algorithm_type = algoString,
-                ai_evaluation_score = dto.aiEvaluationScore,
-                ai_depth_searched = dto.aiDepthSearched,
-                ai_nodes_evaluated = dto.aiNodesEvaluated,
-                move_time_ms = dto.moveTimeMilliseconds, // ชื่อตาม DTO ใหม่
+                ai_evaluation_score = dto.AiEvaluationScore,
+                ai_depth_searched = dto.AiDepthSearched,
+                ai_nodes_evaluated = dto.AiNodesEvaluated,
+                move_time_ms = dto.MoveTimeMilliseconds, // ชื่อตาม DTO ใหม่
 
                 created_at = DateTime.UtcNow
             };
@@ -115,7 +113,23 @@ namespace ChessApi.Services.Move
                 EndY = lastMove.end_y,
                 FromPosition = $"{(char)('a' + lastMove.start_x)}{lastMove.start_y + 1}",
                 ToPosition = $"{(char)('a' + lastMove.end_x)}{lastMove.end_y + 1}",
-                PlayerTurn = lastMove.team
+                PlayerTurn = lastMove.team,
+                IsCastling = lastMove.is_castling ?? false,
+                IsEnPassant = lastMove.is_en_passant ?? false,
+                PromotedTo = lastMove.promoted_to switch
+                {
+                    "queen" => 5,
+                    "rook" => 4,
+                    "bishop" => 3,
+                    "knight" => 2,
+                    "pawn" => 1,
+                    _ => 0 // None
+                },
+
+                // optional (เผื่ออนาคต)
+                Status = null,
+                Winner = null
+
             };
         }
     }

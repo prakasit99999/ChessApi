@@ -22,7 +22,7 @@ namespace ChessApi.Validations.Auth
             {
                 errors.Add("Email must be a valid email address.");
             }
-            if (string.IsNullOrWhiteSpace(request.PasswordHash))
+            if (string.IsNullOrWhiteSpace(request.Password))
             {
                 errors.Add("Password cannot be null or empty.");
             }

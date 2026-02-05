@@ -18,4 +18,28 @@
         public bool Success { get; set; } = false;
         public string? Message { get; set; } = null;
     }
+    public class UpdateStatusRequest
+    {
+        public int UserId { get; set; }
+        public string Status { get; set; } // online, offline, playing
+    }
+
+    public class UpdateStatusResponse
+    {
+        public bool Success { get; set; } = false;
+        public string? Message { get; set; } = null;
+    }
+
+
+    public class UserListDto
+    {
+        public int UserId { get; set; }
+        public string Username { get; set; } = string.Empty;
+        public string Status { get; set; } = "offline";
+    }
+
+
+
+
+
 }

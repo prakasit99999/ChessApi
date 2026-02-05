@@ -5,10 +5,11 @@ using ChessApi.Services.AiPerformance;
 using ChessApi.Services.Game;
 using ChessApi.Services.Interfaces;
 using ChessApi.Services.Login;
+using ChessApi.Services.Leaderboard;
 using ChessApi.Services.Matchmaking;
+using ChessApi.Services.Rating;
 using ChessApi.Services.Move;
 using ChessApi.Services.Users;
-using ChessApi.Services.Social;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -94,8 +95,9 @@ namespace ChessApi
             builder.Services.AddScoped<IMatchmakingService, MatchmakingService>();
             builder.Services.AddScoped<IAiPerformance, AiPerformanceService>();
             builder.Services.AddScoped<IGameService, GameService>();
+            builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
+            builder.Services.AddScoped<IRatingService, RatingService>();
             builder.Services.AddScoped<IMoveService, MoveService>();
-            builder.Services.AddScoped<ISocialService, SocialService>();
             builder.Services.AddScoped<JwtService>();    // Register PasswordHasher and Jwt
 
             //  CORS Config 

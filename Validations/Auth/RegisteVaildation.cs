@@ -19,6 +19,10 @@ namespace ChessApi.Validations.Auth
             {
                 errors.Add("Username cannot be null or empty.");
             }
+            if(request.Username.Length >= 10)
+            {
+                errors.Add("Username must be less than 10 characters long.");
+            }
             if (string.IsNullOrWhiteSpace(request.Email))
             {
                 errors.Add("Email cannot be null or empty.");

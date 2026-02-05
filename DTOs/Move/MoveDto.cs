@@ -59,34 +59,39 @@
 
         public class MoveRequest
         {
-
             public int GameId { get; set; }
             public int MoveNumber { get; set; }
-            public int startX { get; set; }
-            public int startY { get; set; }
-            public int endX { get; set; }
-            public int endY { get; set; }
-            public int capturedX { get; set; }
-            public int capturedY { get; set; }
+
+            public int StartX { get; set; }
+            public int StartY { get; set; }
+            public int EndX { get; set; }
+            public int EndY { get; set; }
+
+            public int CapturedX { get; set; }
+            public int CapturedY { get; set; }
+
             public pieceType PieceType { get; set; }
             public team PlayerTurn { get; set; }
+
             public capturePieceType CapturedPieceType { get; set; }
             public capturedPicecTeam CapturedPieceTeam { get; set; }
+
             public promotedTo PromotedTo { get; set; }
             public promotedFrom PromotedFrom { get; set; }
+
             public algorithmType AlgorithmType { get; set; }
-            public bool IsCasting { get; set; }
+
+            public bool IsCastling { get; set; }
             public bool IsEnPassant { get; set; }
             public bool IsCapture { get; set; }
             public bool IsCheck { get; set; }
             public bool IsPawnTwoStep { get; set; }
             public bool PieceHasMovedBefore { get; set; }
 
-            public int aiEvaluationScore { get; set; }
-            public int aiDepthSearched { get; set; }
-            public int aiNodesEvaluated { get; set; }
-            public int moveTimeMilliseconds { get; set; }
-
+            public int AiEvaluationScore { get; set; }
+            public int AiDepthSearched { get; set; }
+            public int AiNodesEvaluated { get; set; }
+            public int MoveTimeMilliseconds { get; set; }
         }
 
         public class MoveBatchRequest
@@ -107,8 +112,18 @@
             // ส่งแบบ String ("e2", "e4") เผื่อใช้แสดงผลหรือ Log
             public string FromPosition { get; set; } = string.Empty;
             public string ToPosition { get; set; } = string.Empty;
-
             public string PlayerTurn { get; set; } = string.Empty; // "White" or "Black"
+ 
+            // New fields for synchronization to match client expectations
+            public bool IsCastling { get; set; }
+            public bool IsEnPassant { get; set; }
+ 
+            // Corresponds to the 'promotedTo' enum integer value. 0 for None.
+            public int PromotedTo { get; set; }
+ 
+            // Fields for game over status
+            public string? Status { get; set; }
+            public string? Winner { get; set; }
         }
 
     }

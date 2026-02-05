@@ -12,10 +12,12 @@ namespace ChessApi.Services.Game
     public class GameService : IGameService
     {
         private readonly ChessDbContext _context;
+        private readonly IRatingService _ratingService;
 
-        public GameService(ChessDbContext context)
+        public GameService(ChessDbContext context, IRatingService ratingService)
         {
             _context = context;
+            _ratingService = ratingService;
         }
 
         public async Task<int> CreateGameAsync(GameCreateDto dto)
@@ -52,6 +54,7 @@ namespace ChessApi.Services.Game
             var newGame = new Models.game
             {
                 game_type = dto.GameType,
+                match_mode = dto.MatchMode ?? "normal",
                 white_player_type = dto.WhitePlayerType,
                 black_player_type = dto.BlackPlayerType,
                 game_status = status,
@@ -75,44 +78,59 @@ namespace ChessApi.Services.Game
             var game = await GetGameWithPlayers(dto.GameId);
             if (game == null) return false;
 
+            //  กันยิงซ้ำ
+            if (game.game_status == "finished")
+                return false;
+
             string rawResult = dto.Result?.ToLower() ?? "draw";
 
-            // Update Game Status
             game.game_status = "finished";
             game.result = MapResultToEnum(rawResult);
-            game.result_reason = dto.ResultReason?.ToLower();
+            game.result_reason = dto.ResultReason;
             game.finished_at = DateTime.UtcNow;
 
-            //  LOGIC ใหม่: อัปเดต Stats เฉพาะ Online Multiplayer และเกมไม่ Abandoned
-            bool isOnline = game.game_type == "online_multiplayer";
-            bool isAbandoned = (rawResult == "abandoned");
+            await _context.SaveChangesAsync();
 
-            if (isOnline && !isAbandoned)
+            //  ตัดคะแนนเฉพาะ Ranked
+            bool isRankedOnline =
+                game.game_type == "online_multiplayer" &&
+                game.match_mode == "ranked" &&
+                game.white_player_id.HasValue &&
+                game.black_player_id.HasValue &&
+                rawResult != "abandoned";
+
+            if (isRankedOnline)
             {
-                UpdatePlayerStats(game, rawResult);
+                string winnerColor = rawResult switch
+                {
+                    "white_wins" => "white",
+                    "black_wins" => "black",
+                    _ => "draw"
+                };
+
+                await _ratingService.ProcessGameResultAsync(
+                    game.white_player_id.Value,
+                    game.black_player_id.Value,
+                    winnerColor
+                );
             }
 
-            await _context.SaveChangesAsync();
             return true;
         }
 
-        //  3. Resign / Abort
-        // ไฟล์: ChessApi.Services/Game/GameService.cs
 
+        //  3. Resign / Abort
         public async Task<bool> ResignGameAsync(int gameId, int playerId, string reason)
         {
             var game = await GetGameWithPlayers(gameId);
+            if (game == null || game.game_status != "in_progress")
+                return false;
 
-            // 1. เช็คว่ามีเกมและสถานะถูกต้อง
-            if (game == null || game.game_status != "in_progress") return false;
-
-            bool isWhite = (game.white_player_id == playerId) || (game.white_player_id == null && playerId <= 0);
-            bool isBlack = (game.black_player_id == playerId) || (game.black_player_id == null && playerId <= 0);
-
-            // ถ้าไม่ใช่ทั้งสีขาว และไม่ใช่ทั้งสีดำ ให้ถือว่าไม่มีสิทธิ์
+            bool isWhite = game.white_player_id == playerId;
+            bool isBlack = game.black_player_id == playerId;
             if (!isWhite && !isBlack) return false;
 
-            // 2. กฎ: เดินน้อยกว่า 2 ตา = โมฆะ (Aborted Early)
+            // เดิน < 2 = โมฆะ
             if (game.move_count < 2)
             {
                 game.game_status = "abandoned";
@@ -124,28 +142,34 @@ namespace ChessApi.Services.Game
                 return true;
             }
 
-            // 3. หาผู้ชนะ (ถ้าคนกดออกคือสีขาว -> ดำชนะ)
-            string winnerColor = "";
-            if (isWhite) winnerColor = "black";
-            else winnerColor = "white";
+            string winnerColor = isWhite ? "black" : "white";
 
-            // 4. บันทึกผล
             game.game_status = "finished";
             game.result = MapResultToEnum(winnerColor);
-
-            // ✅ ใช้ค่า reason ที่ส่งมา (ถ้าไม่มีให้ใช้ resignation)
-            game.result_reason = !string.IsNullOrEmpty(reason) ? reason : "resignation";
-
+            game.result_reason = string.IsNullOrEmpty(reason) ? "resignation" : reason;
             game.finished_at = DateTime.UtcNow;
 
-            if (game.game_type == "online_multiplayer")
+            await _context.SaveChangesAsync();
+
+            //  ตัดคะแนนเฉพาะ Ranked
+            if (
+                game.game_type == "online_multiplayer" &&
+                game.match_mode == "ranked" &&
+                game.white_player_id.HasValue &&
+                game.black_player_id.HasValue
+            )
             {
-                UpdatePlayerStats(game, winnerColor);
+                await _ratingService.ProcessGameResultAsync(
+                    game.white_player_id.Value,
+                    game.black_player_id.Value,
+                    winnerColor
+                );
             }
 
-            await _context.SaveChangesAsync();
             return true;
         }
+
+
         public async Task<GameResultDto?> GetGameResultAsync(int gameID)
         {
             var game = await _context.games.FirstOrDefaultAsync(g => g.game_id == gameID);
@@ -155,6 +179,7 @@ namespace ChessApi.Services.Game
             {
                 GameId = game.game_id,
                 GameType = game.game_type,
+                MatchMode = game.match_mode,
                 WhitePlayerType = game.white_player_type,
                 BlackPlayerType = game.black_player_type,
                 Result = game.result,

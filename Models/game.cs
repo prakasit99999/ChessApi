@@ -16,6 +16,9 @@ public partial class game
     [Column(TypeName = "enum('single_player','ai_vs_ai','local_multiplayer','online_multiplayer')")]
     public string game_type { get; set; } = null!;
 
+    [Column(TypeName = "enum('ranked','nomal')")]
+    public string? match_mode { get; set; }
+
     public int? white_player_id { get; set; }
 
     public int? black_player_id { get; set; }
@@ -29,7 +32,7 @@ public partial class game
     [Column(TypeName = "enum('waiting','in_progress','paused','finished','abandoned','aborted','disconnected','active')")]
     public string? game_status { get; set; }
 
-    [Column(TypeName = "enum('white_wins','black_wins','draw','stalemate','abandoned')")]
+    [Column(TypeName = "enum('white_wins','black_wins','draw')")]
     public string? result { get; set; }
 
     [Column(TypeName = "enum('Checkmate','Stalemate','DrawAgreement','Timeout','InsufficientMaterial','FiftyMoveRule','ThreefoldRepitition','Resignation','Abandoned','GameAbortedEarly','Disconnected','SystemTerminated')")]

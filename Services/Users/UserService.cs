@@ -38,5 +38,48 @@ namespace ChessApi.Services.Users
             };
         }
 
+        public async Task<bool> UpdateUserStatusAsync(int userId, string status)
+        {
+            var user = await _context.users.FirstOrDefaultAsync(u => u.user_id == userId);
+            if (user == null)
+            {
+                return false;
+            }
+
+            user.status = status;
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        public async Task<List<UserListDto>> GetAllPlayersAsync()
+        {
+            return await _context.users
+                .OrderBy(u => u.username)
+                .Select(u => new UserListDto
+                {
+                    UserId = u.user_id,
+                    Username = u.username,
+                    Status = u.status ?? "offline"
+                })
+                .ToListAsync();
+        }
+
+        public async Task<List<UserListDto>> SearchPlayersAsync(string query)
+        {
+            return await _context.users
+                .Where(u => u.username.Contains(query))
+                .OrderBy(u => u.username)
+                .Select(u => new UserListDto
+                {
+                    UserId = u.user_id,
+                    Username = u.username,
+                    Status = u.status ?? "offline"
+                })
+                .ToListAsync();
+        }
+
+        public Task SearchPSlayersAsync(string query)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

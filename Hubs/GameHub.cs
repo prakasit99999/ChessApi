@@ -37,18 +37,18 @@ namespace ChessApi.Hubs
                     move_number = currentMoveCount + 1,
 
                     // Map พิกัด (int -> byte)
-                    start_x = (sbyte)(byte)moveData.startX,
-                    start_y = (sbyte)(byte)moveData.startY,
-                    end_x = (sbyte)(byte)moveData.endX,
-                    end_y = (sbyte)(byte)moveData.endY,
+                    start_x = (sbyte)(byte)moveData.StartX,
+                    start_y = (sbyte)(byte)moveData.StartY,
+                    end_x = (sbyte)(byte)moveData.EndX,
+                    end_y = (sbyte)(byte)moveData.EndY,
                     
                     // Map Enums -> String (แปลงเป็นตัวพิมพ์เล็กตาม MySQL Enum)
                     piece_type = moveData.PieceType.ToString().ToLower(), // Pawn -> "pawn"
                     team = moveData.PlayerTurn.ToString().ToLower(),      // White -> "white"
                     
                     // Optional Fields: เช็คว่ามีค่าไหม
-                    captured_x = (sbyte?)(byte)moveData.capturedX,
-                    captured_y = (sbyte?)(byte)moveData.capturedY,
+                    captured_x = (sbyte?)(byte)moveData.CapturedX,
+                    captured_y = (sbyte?)(byte)moveData.CapturedY,
                     
                     captured_piece_type = moveData.CapturedPieceType != MoveDto.capturePieceType.None 
                         ? moveData.CapturedPieceType.ToString().ToLower() : null,
@@ -63,7 +63,7 @@ namespace ChessApi.Hubs
                          ? moveData.PromotedFrom.ToString().ToLower() : null,
 
                     // Flags
-                    is_castling = moveData.IsCasting,
+                    is_castling = moveData.IsCastling,
                     is_en_passant = moveData.IsEnPassant,
                     is_capture = moveData.IsCapture,
                     is_check = moveData.IsCheck,
@@ -73,10 +73,10 @@ namespace ChessApi.Hubs
                     // AI Data (ถ้ามี)
                     algorithm_type = moveData.AlgorithmType != MoveDto.algorithmType.None
                         ? moveData.AlgorithmType.ToString().ToLower() : null,
-                    ai_evaluation_score = moveData.aiEvaluationScore,
-                    ai_depth_searched = moveData.aiDepthSearched,
-                    ai_nodes_evaluated = moveData.aiNodesEvaluated,
-                    move_time_ms = moveData.moveTimeMilliseconds,
+                    ai_evaluation_score = moveData.AiEvaluationScore,
+                    ai_depth_searched = moveData.AiDepthSearched,
+                    ai_nodes_evaluated = moveData.AiNodesEvaluated,
+                    move_time_ms = moveData.MoveTimeMilliseconds,
 
                     created_at = DateTime.UtcNow
                 };

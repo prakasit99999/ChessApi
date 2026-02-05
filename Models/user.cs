@@ -38,12 +38,6 @@ public partial class user
     [Column(TypeName = "timestamp")]
     public DateTime? created_at { get; set; }
 
-    [InverseProperty("user1")]
-    public virtual ICollection<friendship> friendshipuser1s { get; set; } = new List<friendship>();
-
-    [InverseProperty("user2")]
-    public virtual ICollection<friendship> friendshipuser2s { get; set; } = new List<friendship>();
-
     [InverseProperty("black_player")]
     public virtual ICollection<game> gameblack_players { get; set; } = new List<game>();
 

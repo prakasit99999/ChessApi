@@ -25,8 +25,6 @@ namespace ChessApi.Controllers.Game
             if (!ModelState.IsValid) return BadRequest(ModelState);
             try
             {
-                // TODO: SECURITY CHECK (ดักจับเรื่อง Token )
-                // ดึง User ID จาก Token (ถ้ามี)
                 int? userIdFromToken = null;
                 if (User.Identity.IsAuthenticated)
                 {
@@ -36,7 +34,6 @@ namespace ChessApi.Controllers.Game
                         userIdFromToken = id;
                     }
                 }
-
                 // กรณี 1: ถ้าเป็น Online Multiplayer -> บังคับต้องมี Token
                 if (dto.GameType == "online_multiplayer")
                 {
@@ -52,10 +49,9 @@ namespace ChessApi.Controllers.Game
                 else
                 {
 
-                    // ถ้าไม่ได้ล็อกอิน -> เล่นแบบ Guest
                     dto.WhitePlayerId = null;
-                    // โหมด Offline ไม่ต้องมี BlackPlayerId (AI หรือ Local)
                     dto.BlackPlayerId = null;
+                    dto.MatchMode = null;
                 }
 
                 var gameId = await _gameService.CreateGameAsync(dto);
@@ -64,7 +60,8 @@ namespace ChessApi.Controllers.Game
                 {
                     Message = "Game started successfully",
                     GameId = gameId,
-                    Mode = dto.GameType
+                    Mode = dto.GameType,
+                    MatchMode = dto.MatchMode ?? "normal"
                 });
             }
             catch (Exception ex)
@@ -77,13 +74,20 @@ namespace ChessApi.Controllers.Game
         [HttpPost("end")]
         public async Task<IActionResult> EndGame([FromBody] GameResultDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
-
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             try
             {
+
+                int? userIdFromToken = null;
+                if (User.Identity.IsAuthenticated)
+                {
+                    var idClaim = User.FindFirst("id")?.Value ?? User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                    if (int.TryParse(idClaim, out int id))
+                    {
+                        userIdFromToken = id;
+                    }
+                }
+
                 var success = await _gameService.FinalizeGameAsync(dto);
 
                 if (!success)
@@ -152,6 +156,7 @@ namespace ChessApi.Controllers.Game
             {
                 GameId = gameResult.GameId,
                 GameType = gameResult.GameType,
+                MatchMode = gameResult.MatchMode,
                 Status = gameResult.Result ?? "in_progress", // ถ้ายังไม่จบ Result จะเป็น null
                 MoveCount = gameResult.MoveCount,
                 CreatedAt = gameResult.CreatedAt

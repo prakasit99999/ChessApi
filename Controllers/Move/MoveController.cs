@@ -78,7 +78,8 @@ namespace ChessApi.Controllers.Move
             var result = await _moveService.GetLatestMoveAsync(gameId);
             if (result == null)
             {
-                return NotFound(new { Message = "No moves found for this game." });
+                // เกมเพิ่งเริ่ม ยังไม่มี Move ไม่ใช่ Error -> ส่งกลับเป็น null (200 OK)
+                return Ok(null);
             }
             return Ok(result);
         }
