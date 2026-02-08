@@ -10,9 +10,11 @@ using ChessApi.Services.Matchmaking;
 using ChessApi.Services.Rating;
 using ChessApi.Services.Move;
 using ChessApi.Services.Users;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+using ChessApi.Services.Invites;
+using ChessApi.Hubs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ChessApi
@@ -98,6 +100,8 @@ namespace ChessApi
             builder.Services.AddScoped<ILeaderboardService, LeaderboardService>();
             builder.Services.AddScoped<IRatingService, RatingService>();
             builder.Services.AddScoped<IMoveService, MoveService>();
+            builder.Services.AddScoped<IInviteService, InviteService>();
+            builder.Services.AddSignalR();
             builder.Services.AddScoped<JwtService>();    // Register PasswordHasher and Jwt
 
             //  CORS Config 
@@ -128,6 +132,7 @@ namespace ChessApi
             app.UseAuthentication();
             app.UseAuthorization();
             app.MapControllers();
+            app.MapHub<GameHub>("/gamehub");
             app.Run();
         }
     }

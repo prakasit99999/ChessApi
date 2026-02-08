@@ -16,8 +16,8 @@ public partial class game
     [Column(TypeName = "enum('single_player','ai_vs_ai','local_multiplayer','online_multiplayer')")]
     public string game_type { get; set; } = null!;
 
-    [Column(TypeName = "enum('ranked','nomal')")]
-    public string? match_mode { get; set; }
+    [Column(TypeName = "enum('ranked','normal')")]
+    public string? match_mode { get; set; } = null;
 
     public int? white_player_id { get; set; }
 

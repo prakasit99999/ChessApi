@@ -54,7 +54,7 @@ namespace ChessApi.Services.Game
             var newGame = new Models.game
             {
                 game_type = dto.GameType,
-                match_mode = dto.MatchMode ?? "normal",
+                match_mode = dto.MatchMode == 1 ? "ranked" : dto.MatchMode == 2 ? "normal" : null,
                 white_player_type = dto.WhitePlayerType,
                 black_player_type = dto.BlackPlayerType,
                 game_status = status,
@@ -89,6 +89,16 @@ namespace ChessApi.Services.Game
             game.result_reason = dto.ResultReason;
             game.finished_at = DateTime.UtcNow;
 
+            // อัปเดตสถิติ (Win/Loss/Draw) สำหรับ Online Games
+            string winnerColor = rawResult switch
+            {
+                "white_wins" => "white",
+                "black_wins" => "black",
+                _ => "draw"
+            };
+            UpdatePlayerStats(game, winnerColor);
+
+
             await _context.SaveChangesAsync();
 
             //  ตัดคะแนนเฉพาะ Ranked
@@ -101,13 +111,6 @@ namespace ChessApi.Services.Game
 
             if (isRankedOnline)
             {
-                string winnerColor = rawResult switch
-                {
-                    "white_wins" => "white",
-                    "black_wins" => "black",
-                    _ => "draw"
-                };
-
                 await _ratingService.ProcessGameResultAsync(
                     game.white_player_id.Value,
                     game.black_player_id.Value,
@@ -133,7 +136,7 @@ namespace ChessApi.Services.Game
             // เดิน < 2 = โมฆะ
             if (game.move_count < 2)
             {
-                game.game_status = "abandoned";
+                game.game_status = "finished";
                 game.result = "abandoned";
                 game.result_reason = "game_aborted_early";
                 game.finished_at = DateTime.UtcNow;

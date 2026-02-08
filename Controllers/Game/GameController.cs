@@ -61,7 +61,7 @@ namespace ChessApi.Controllers.Game
                     Message = "Game started successfully",
                     GameId = gameId,
                     Mode = dto.GameType,
-                    MatchMode = dto.MatchMode ?? "normal"
+                    MatchMode = dto.MatchMode == 1 ? "ranked" : dto.MatchMode == 2 ? "normal" : null
                 });
             }
             catch (Exception ex)

@@ -7,7 +7,7 @@
         public string GameType { get; set; } = "single_player";
 
         // โหมดการเล่น: ranked (จัดอันดับ), LogOutAsync (กระชับมิตร)
-        public string MatchMode { get; set; } = null;
+        public int? MatchMode { get; set; } = 0; // 0 = null, 1 = ranked , 2 = normal
 
         // ระบุว่าเป็น human หรือ ai_easy, etc.
         public string WhitePlayerType { get; set; } = "human";
@@ -40,7 +40,7 @@
         public DateTime? StartedAt { get; set; }
         public DateTime? FinishedAt { get; set; }
     }
-    
+
     public class GameResignDto
     {
         public int GameId { get; set; }
