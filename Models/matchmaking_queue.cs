@@ -22,6 +22,10 @@ public partial class matchmaking_queue
     [Column(TypeName = "enum('waiting','matched','cancelled')")]
     public string? status { get; set; }
 
+    [Column(TypeName = "enum('ranked','normal')")]
+    public string match_mode { get; set; } = null!;
+
+
     [Column(TypeName = "timestamp")]
     public DateTime? joined_at { get; set; }
 

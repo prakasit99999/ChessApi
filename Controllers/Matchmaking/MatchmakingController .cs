@@ -1,11 +1,13 @@
 ﻿using ChessApi.DTOs.Matchmaking;
 using ChessApi.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChessApi.Controllers.Matchmaking
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class MatchmakingController : ControllerBase
     {
         private readonly IMatchmakingService _matchmakingService;

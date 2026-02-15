@@ -15,7 +15,9 @@ namespace ChessApi.DTOs.Invites
     {
         public string InviteId { get; set; }
         public int FromUserId { get; set; }
+        public string? FromUsername { get; set; }
         public int ToUserId { get; set; }
+        public string? ToUsername { get; set; }
         public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime ExpiresAt { get; set; }

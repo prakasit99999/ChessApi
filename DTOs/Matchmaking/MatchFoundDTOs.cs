@@ -7,6 +7,7 @@
         public int TimeControlMinutes { get; set; }
         public string RoomCode { get; set; } = string.Empty;
         public string GameType { get; set; } = "standard";
+        public int MinRating { get; set; } = 0;
         public bool IsRated { get; set; }
         public string Color { get; set; } = "random";
     }

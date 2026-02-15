@@ -1,7 +1,10 @@
-﻿﻿using ChessApi.DTOs.Game;
+﻿﻿using System;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using ChessApi.DTOs.Game;
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using static ChessApi.DTOs.Game.MoveDto;
 
 namespace ChessApi.Controllers.Move
 {
@@ -16,22 +19,25 @@ namespace ChessApi.Controllers.Move
             _moveService = moveService;
         }
 
+        // 1️⃣ Make Single Move
         [HttpPost]
         public async Task<IActionResult> MakeMove([FromBody] MoveDto.MoveRequest request)
         {
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
             try
             {
-                var success = await _moveService.MakeMoveAsync(request);
+                int? userId = GetUserIdIfAuthenticated();
+
+                var success = await _moveService.MakeMoveAsync(request , userId);
 
                 if (!success)
                 {
-                    // ถ้าบันทึกไม่ได้ (เช่น GameId ผิด หรือเกมจบแล้ว) จะแจ้ง Error ชัดเจน
-                    return BadRequest("Cannot make move. Game ID not found or game is not in progress.");
+                    return BadRequest(new
+                    {
+                        Error = "Move not allowed. Invalid game, unauthorized, or game not in progress."
+                    });
                 }
 
                 return Ok(new { Message = "Move recorded successfully" });
@@ -42,23 +48,22 @@ namespace ChessApi.Controllers.Move
             }
         }
 
-        // ✅ แก้ไขฟังก์ชันนี้: เช็คผลลัพธ์ Success/Fail ตามจริง
+        // 2️⃣ Make Batch Moves (AI Simulation)
         [HttpPost("batch")]
-        public async Task<IActionResult> MakeMovesBatch([FromBody] MoveBatchRequest wrapper) // ✅ รับเป็น Wrapper
+        public async Task<IActionResult> MakeMovesBatch([FromBody] MoveDto.MoveBatchRequest wrapper)
         {
-            // แกะกล่องเอา moves ออกมาเช็ค
             if (wrapper == null || wrapper.moves == null || wrapper.moves.Count == 0)
-            {
                 return BadRequest("No moves provided.");
-            }
 
-            var requests = wrapper.moves; // ✅ เอา List ข้างในมาใช้
+            int? userId = GetUserIdIfAuthenticated();
+
             int successCount = 0;
             int failCount = 0;
 
-            foreach (var req in requests)
+            foreach (var req in wrapper.moves)
             {
-                bool isSuccess = await _moveService.MakeMoveAsync(req);
+                bool isSuccess = await _moveService.MakeMoveAsync(req,userId);
+
                 if (isSuccess) successCount++;
                 else failCount++;
             }
@@ -66,22 +71,34 @@ namespace ChessApi.Controllers.Move
             return Ok(new
             {
                 Message = "Batch process completed",
-                Total = requests.Count,
+                Total = wrapper.moves.Count,
                 Success = successCount,
                 Failed = failCount
             });
         }
 
+        // 3️ Get Latest Move (Polling Support)
         [HttpGet("latest/{gameId}")]
         public async Task<IActionResult> GetLatestMove(int gameId)
         {
             var result = await _moveService.GetLatestMoveAsync(gameId);
+
             if (result == null)
-            {
-                // เกมเพิ่งเริ่ม ยังไม่มี Move ไม่ใช่ Error -> ส่งกลับเป็น null (200 OK)
-                return Ok(null);
-            }
+                return Ok(null); // เกมเพิ่งเริ่ม ไม่มี move
+
             return Ok(result);
+        }
+        //  Helper: Extract UserId From JWT (If Login)
+        private int? GetUserIdIfAuthenticated()
+        {
+            if (User?.Identity?.IsAuthenticated == true)
+            {
+                var claim = User.Claims.FirstOrDefault(c => c.Type == "user_id");
+                if (claim != null && int.TryParse(claim.Value, out int id))
+                    return id;
+            }
+
+            return null; // ไม่ได้ login (AI mode)
         }
     }
 }

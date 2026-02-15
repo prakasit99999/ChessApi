@@ -8,7 +8,7 @@ namespace ChessApi.Controllers.User
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize] // ต้องมี token
+    [Authorize] 
     public class UserController : ControllerBase
     {
         private readonly IUserService _userService;

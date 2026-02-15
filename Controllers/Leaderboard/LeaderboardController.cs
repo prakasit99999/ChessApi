@@ -1,10 +1,12 @@
 using ChessApi.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChessApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class LeaderboardController : ControllerBase
     {
         private readonly ILeaderboardService _leaderboardService;
