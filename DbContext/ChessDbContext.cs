@@ -50,8 +50,9 @@ public partial class ChessDbContext : Microsoft.EntityFrameworkCore.DbContext
     public virtual DbSet<user_statistic> user_statistics { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseMySql("server=192.168.1.13;port=32768;database=chess_game_db;user=root;password=root", Microsoft.EntityFrameworkCore.ServerVersion.Parse("9.4.0-mysql"));
+    {
+        // Connection string is configured in Program.cs
+    }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
