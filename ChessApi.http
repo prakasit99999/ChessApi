@@ -4,3 +4,36 @@ GET {{ChessApi_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+# Create a new invitation
+POST {{ChessApi_HostAddress}}/api/GameInvitations
+Content-Type: application/json
+
+{
+  "from_user_id": 1,
+  "to_user_id": 2,
+  "time_control_minutes": 10,
+  "message": "Challenge!"
+}
+
+###
+
+# Get invitation by ID
+GET {{ChessApi_HostAddress}}/api/GameInvitations/1
+
+###
+
+# Get received invitations for user 2
+GET {{ChessApi_HostAddress}}/api/GameInvitations/received/2
+
+###
+
+# Accept invitation
+POST {{ChessApi_HostAddress}}/api/GameInvitations/1/accept
+
+###
+
+# Decline invitation
+POST {{ChessApi_HostAddress}}/api/GameInvitations/1/decline
+
+###

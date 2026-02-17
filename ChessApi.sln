@@ -1,20 +1,46 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36310.24 d17.14
+VisualStudioVersion = 17.14.36310.24
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessApi", "ChessApi.csproj", "{C9C9FACA-2169-4199-B8A7-C07080431311}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChessApi.Tests", "ChessApi.Tests\ChessApi.Tests.csproj", "{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{C9C9FACA-2169-4199-B8A7-C07080431311}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C9C9FACA-2169-4199-B8A7-C07080431311}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9C9FACA-2169-4199-B8A7-C07080431311}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{C9C9FACA-2169-4199-B8A7-C07080431311}.Debug|x64.Build.0 = Debug|Any CPU
+		{C9C9FACA-2169-4199-B8A7-C07080431311}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{C9C9FACA-2169-4199-B8A7-C07080431311}.Debug|x86.Build.0 = Debug|Any CPU
 		{C9C9FACA-2169-4199-B8A7-C07080431311}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C9C9FACA-2169-4199-B8A7-C07080431311}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9C9FACA-2169-4199-B8A7-C07080431311}.Release|x64.ActiveCfg = Release|Any CPU
+		{C9C9FACA-2169-4199-B8A7-C07080431311}.Release|x64.Build.0 = Release|Any CPU
+		{C9C9FACA-2169-4199-B8A7-C07080431311}.Release|x86.ActiveCfg = Release|Any CPU
+		{C9C9FACA-2169-4199-B8A7-C07080431311}.Release|x86.Build.0 = Release|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Debug|x64.Build.0 = Debug|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Debug|x86.Build.0 = Debug|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Release|x64.ActiveCfg = Release|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Release|x64.Build.0 = Release|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Release|x86.ActiveCfg = Release|Any CPU
+		{ED18EA5B-DDE4-486B-A5AE-9994BF70712C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

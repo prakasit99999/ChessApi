@@ -12,6 +12,9 @@ namespace ChessApi
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            builder.Services.AddDbContext<ChessDbContext>(options =>
+                options.UseMySql(connectionString, Microsoft.EntityFrameworkCore.ServerVersion.Parse("9.4.0-mysql")));
 
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
