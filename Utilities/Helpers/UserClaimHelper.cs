@@ -18,5 +18,17 @@ namespace ChessApi.Utilities.Helpers
 
             return null;
         }
+
+        public static string? GetUsernameFromToken(ClaimsPrincipal user)
+        {
+            if (user?.Identity?.IsAuthenticated != true)
+                return null;
+
+            var usernameClaim =
+                user.FindFirst("username")?.Value ??
+                user.FindFirst(ClaimTypes.Name)?.Value;
+
+            return usernameClaim;
+        }
     }
 }

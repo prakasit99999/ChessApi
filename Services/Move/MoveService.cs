@@ -29,7 +29,7 @@ namespace ChessApi.Services.Move
             if (game.game_status != "in_progress")
                 return false;
 
-            // 3️ ห้าม Local Multiplayer ยิง API
+            // 3️ (Optional) Allow Local Multiplayer if needed
             if (game.game_type == "local_multiplayer")
                 return false;
 

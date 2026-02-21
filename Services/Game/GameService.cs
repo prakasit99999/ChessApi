@@ -1,4 +1,6 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using ChessApi.DbContext;
 using ChessApi.DTOs.Game;
@@ -75,6 +77,14 @@ namespace ChessApi.Services.Game
             };
 
             _context.games.Add(newGame);
+
+            if (dto.GameType.Equals("online_multiplayer", StringComparison.OrdinalIgnoreCase)
+                && whiteId.HasValue
+                && blackId.HasValue)
+            {
+                await SetUsersStatusByIdsAsync(new[] { whiteId.Value, blackId.Value }, "playing");
+            }
+
             await _context.SaveChangesAsync();
 
             return newGame.game_id;
@@ -112,6 +122,7 @@ namespace ChessApi.Services.Game
                 };
 
                 UpdatePlayerStats(game, winnerColor);
+                SetOnlinePlayersStatus(game, "online");
 
                 await _context.SaveChangesAsync();
 
@@ -176,6 +187,7 @@ namespace ChessApi.Services.Game
                     game.result = "abandoned";
                     game.result_reason = "game_aborted_early";
                     game.finished_at = DateTime.UtcNow;
+                    SetOnlinePlayersStatus(game, "online");
 
                     await _context.SaveChangesAsync();
                     await tx.CommitAsync();
@@ -195,6 +207,7 @@ namespace ChessApi.Services.Game
                 game.finished_at = DateTime.UtcNow;
 
                 UpdatePlayerStats(game, winnerColor);
+                SetOnlinePlayersStatus(game, "online");
 
                 await _context.SaveChangesAsync();
 
@@ -320,5 +333,27 @@ namespace ChessApi.Services.Game
                     game.black_player.games_drawn++;
             }
         }
+
+        private static void SetOnlinePlayersStatus(game game, string status)
+        {
+            if (game.game_type != "online_multiplayer") return;
+
+            if (game.white_player != null)
+                game.white_player.status = status;
+
+            if (game.black_player != null)
+                game.black_player.status = status;
+        }
+
+        private async Task SetUsersStatusByIdsAsync(IEnumerable<int> userIds, string status)
+        {
+            var players = await _context.users
+                .Where(u => userIds.Contains(u.user_id))
+                .ToListAsync();
+
+            foreach (var player in players)
+                player.status = status;
+        }
     }
 }
+

@@ -19,7 +19,7 @@ public partial class matchmaking_queue
 
     public int? max_rating { get; set; }
 
-    [Column(TypeName = "enum('waiting','matched','cancelled')")]
+    [Column(TypeName = "enum('waiting','matched','cancelled','expired','failed')")]
     public string? status { get; set; }
 
     [Column(TypeName = "enum('ranked','normal')")]

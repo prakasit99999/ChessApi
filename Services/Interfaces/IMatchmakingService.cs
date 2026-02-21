@@ -9,5 +9,6 @@ namespace ChessApi.Services.Interfaces
         Task<MatchFoundDTOs?> JoinQueueAsync(JoinQueueDTOs request);
         Task CancelQueueAsync(CancelQueueDTOs request);
         Task<MatchFoundDTOs?> CheckForMatchAsync(string username);
+        Task<string?> GetQueueStatusAsync(string username);
     }
 }

@@ -1,9 +1,8 @@
 ﻿﻿using System;
-using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using ChessApi.DTOs.Game;
 using ChessApi.Services.Interfaces;
+using ChessApi.Utilities.Helpers;
 using Microsoft.AspNetCore.Mvc;
 
 namespace ChessApi.Controllers.Move
@@ -19,7 +18,7 @@ namespace ChessApi.Controllers.Move
             _moveService = moveService;
         }
 
-        // 1️⃣ Make Single Move
+        // 1️ Make Single Move
         [HttpPost]
         public async Task<IActionResult> MakeMove([FromBody] MoveDto.MoveRequest request)
         {
@@ -28,9 +27,9 @@ namespace ChessApi.Controllers.Move
 
             try
             {
-                int? userId = GetUserIdIfAuthenticated();
+                int? userId = UserClaimHelper.GetUserIdFromToken(User);
 
-                var success = await _moveService.MakeMoveAsync(request , userId);
+                var success = await _moveService.MakeMoveAsync(request, userId);
 
                 if (!success)
                 {
@@ -48,21 +47,21 @@ namespace ChessApi.Controllers.Move
             }
         }
 
-        // 2️⃣ Make Batch Moves (AI Simulation)
+        // 2️ Make Batch Moves local (AI Simulation)
         [HttpPost("batch")]
         public async Task<IActionResult> MakeMovesBatch([FromBody] MoveDto.MoveBatchRequest wrapper)
         {
             if (wrapper == null || wrapper.moves == null || wrapper.moves.Count == 0)
                 return BadRequest("No moves provided.");
 
-            int? userId = GetUserIdIfAuthenticated();
+            int? userId = UserClaimHelper.GetUserIdFromToken(User);
 
             int successCount = 0;
             int failCount = 0;
 
             foreach (var req in wrapper.moves)
             {
-                bool isSuccess = await _moveService.MakeMoveAsync(req,userId);
+                bool isSuccess = await _moveService.MakeMoveAsync(req, userId);
 
                 if (isSuccess) successCount++;
                 else failCount++;
@@ -88,17 +87,6 @@ namespace ChessApi.Controllers.Move
 
             return Ok(result);
         }
-        //  Helper: Extract UserId From JWT (If Login)
-        private int? GetUserIdIfAuthenticated()
-        {
-            if (User?.Identity?.IsAuthenticated == true)
-            {
-                var claim = User.Claims.FirstOrDefault(c => c.Type == "user_id");
-                if (claim != null && int.TryParse(claim.Value, out int id))
-                    return id;
-            }
-
-            return null; // ไม่ได้ login (AI mode)
-        }
+      
     }
 }
