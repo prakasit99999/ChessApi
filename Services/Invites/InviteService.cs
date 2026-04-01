@@ -4,8 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ChessApi.DbContext;
-using ChessApi.DTOs.Invites;
 using ChessApi.DTOs.Game;
+using ChessApi.DTOs.Invites;
 using ChessApi.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 

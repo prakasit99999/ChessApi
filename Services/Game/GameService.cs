@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -15,7 +16,7 @@ namespace ChessApi.Services.Game
     {
         private readonly ChessDbContext _context;
         private readonly IRatingService _ratingService;
-
+        private static readonly ConcurrentDictionary<int, SemaphoreSlim> _locks = new();
         public GameService(ChessDbContext context, IRatingService ratingService)
         {
             _context = context;
@@ -91,20 +92,22 @@ namespace ChessApi.Services.Game
         }
 
         // 2️ FINALIZE GAME
-        public async Task<(bool Success, int? WhiteRating, int? BlackRating)>
-            FinalizeGameAsync(GameResultDto dto)
+        public async Task<(bool Success, int? WhiteRating, int? BlackRating)> FinalizeGameAsync(GameResultDto dto)
         {
-            var game = await GetGameWithPlayers(dto.GameId);
-            if (game == null) return (false, null, null);
 
-            // กันยิงซ้ำ (Concurrency Guard)
-            if (game.game_status != "in_progress")
-                return (false, null, null);
-
-            using var tx = await _context.Database.BeginTransactionAsync();
-
+            var gameLock = _locks.GetOrAdd(dto.GameId, _ => new System.Threading.SemaphoreSlim(1, 1));
+            await gameLock.WaitAsync();
             try
             {
+                var game = await GetGameWithPlayers(dto.GameId);
+                if (game == null) return (false, null, null);
+                // กันยิงซ้ำ (Concurrency Guard)
+                if (game.game_status != "in_progress")
+                {
+                    return (false, null, null);
+                }
+
+                using var tx = await _context.Database.BeginTransactionAsync();
                 string rawResult = dto.Result?.ToLower() ?? "draw";
 
                 game.game_status = "finished";
@@ -154,32 +157,38 @@ namespace ChessApi.Services.Game
                 return (true,
                     game.white_player?.rating,
                     game.black_player?.rating);
+
             }
             catch
             {
-                await tx.RollbackAsync();
                 return (false, null, null);
+            }
+            finally
+            {
+                gameLock.Release();
+                _locks.TryRemove(dto.GameId, out _);
             }
         }
 
         // 3️ RESIGN / ABORT
-        public async Task<(bool Success, int? WhiteRating, int? BlackRating)>
-            ResignGameAsync(int gameId, int playerId, string reason)
+        public async Task<(bool Success, int? WhiteRating, int? BlackRating)> ResignGameAsync(int gameId, int playerId, string reason)
         {
-            var game = await GetGameWithPlayers(gameId);
-            if (game == null || game.game_status != "in_progress")
-                return (false, null, null);
-
-            bool isWhite = game.white_player_id == playerId;
-            bool isBlack = game.black_player_id == playerId;
-
-            if (!isWhite && !isBlack)
-                return (false, null, null);
-
-            using var tx = await _context.Database.BeginTransactionAsync();
-
+            var gameLock = _locks.GetOrAdd(gameId, _ => new System.Threading.SemaphoreSlim(1, 1));
+            await gameLock.WaitAsync();
             try
             {
+                var game = await GetGameWithPlayers(gameId);
+                if (game == null || game.game_status != "in_progress")
+                    return (false, null, null);
+
+                bool isWhite = game.white_player_id == playerId;
+                bool isBlack = game.black_player_id == playerId;
+
+                if (!isWhite && !isBlack)
+                    return (false, null, null);
+
+                using var tx = await _context.Database.BeginTransactionAsync();
+
                 // ถ้าเดินไม่ถึง 2 ตา → abandoned
                 if (game.move_count < 2)
                 {
@@ -239,8 +248,12 @@ namespace ChessApi.Services.Game
             }
             catch
             {
-                await tx.RollbackAsync();
                 return (false, null, null);
+            }
+            finally
+            {
+                gameLock.Release();
+                _locks.TryRemove(gameId, out _);
             }
         }
         // 4️ GET RESULT
@@ -303,7 +316,7 @@ namespace ChessApi.Services.Game
                 .FirstOrDefaultAsync(g => g.game_id == gameId);
         }
 
-     
+
 
         private void UpdatePlayerStats(game game, string winner)
         {
