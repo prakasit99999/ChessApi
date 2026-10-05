@@ -1,4 +1,4 @@
-﻿﻿using System;
+﻿using System;
 using System.Threading.Tasks;
 using ChessApi.DTOs.Game;
 using ChessApi.Services.Interfaces;
@@ -87,6 +87,32 @@ namespace ChessApi.Controllers.Move
 
             return Ok(result);
         }
-      
+
+        // 4️ Get All Moves for Game (รายละเอียด Move ทั้งหมดในเกม)
+        [HttpGet("game/{gameId:int}")]
+        [HttpGet("list/{gameId:int}")]
+        public async Task<IActionResult> GetGameMoves([FromRoute] int gameId)
+        {
+            if (gameId <= 0)
+                return BadRequest(new { Error = "Invalid game ID." });
+
+            var moves = await _moveService.GetGameMovesAsync(gameId);
+            return Ok(moves);
+        }
+
+        // 5️ Get Single Move Detail (รายละเอียด Move เดี่ยว)
+        [HttpGet("{moveId:int}")]
+        [HttpGet("detail/{moveId:int}")]
+        public async Task<IActionResult> GetMoveDetail([FromRoute] int moveId)
+        {
+            if (moveId <= 0)
+                return BadRequest(new { Error = "Invalid move ID." });
+
+            var move = await _moveService.GetMoveByIdAsync(moveId);
+            if (move == null)
+                return NotFound(new { Error = "Move not found." });
+
+            return Ok(move);
+        }
     }
 }

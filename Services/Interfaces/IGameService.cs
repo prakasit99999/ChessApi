@@ -1,4 +1,4 @@
-﻿using ChessApi.DTOs.Game;
+using ChessApi.DTOs.Game;
 
 namespace ChessApi.Services.Interfaces
 {
@@ -9,5 +9,12 @@ namespace ChessApi.Services.Interfaces
         Task<(bool Success, int? WhiteRating, int? BlackRating)> ResignGameAsync(int gameId, int playerId, string reason);
         Task<GameResultDto?> GetGameResultAsync(int gameId);
         Task<(bool Found, string? GameType, string? GameStatus, int? WhitePlayerId, int? BlackPlayerId)> GetEndGameInfoAsync(int gameId);
+        Task<ChessApi.DTOs.User.PagedResult<GameListDto>> GetPagedGamesAsync(GamePagedRequest request);
+        Task<List<GameListDto>> GetUserGamesAsync(int userId, int limit = 20);
+        Task<GameDetailDto?> GetGameDetailAsync(int gameId);
+        Task<GameCountsDto> GetGameCountsAsync();
+        Task BroadcastGameCountsAsync();
+        Task<List<GameChartDataDto>> GetChartStatsAsync(GameChartRequest request);
+        Task<GameDetails?> GetGameDetailAdminAsync(int gameId);
     }
 }

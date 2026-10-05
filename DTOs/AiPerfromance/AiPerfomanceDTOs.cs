@@ -1,10 +1,11 @@
-﻿
+
 namespace ChessApi.DTOs.AiPerformance
 {
     public class AiPerformanceCreateDto
     {
         public int GameId { get; set; }
         public string AiLevel { get; set; }             // easy | medium | hard
+        public string? AiColor { get; set; }            // white | black
         public string AlgorithmType { get; set; }       // minimax | alpha_beta
         public decimal AverageDepth { get; set; }
         public int AverageNodesEvaluated { get; set; }
@@ -17,6 +18,7 @@ namespace ChessApi.DTOs.AiPerformance
         public int PerformanceId { get; set; }
         public int GameId { get; set; }
         public string AiLevel { get; set; }             // easy | medium | hard
+        public string? AiColor { get; set; }            // white | black
         public string AlgorithmType { get; set; }       // minimax | alpha_beta
         public decimal AverageDepth { get; set; }
         public int AverageNodesEvaluated { get; set; }
@@ -29,6 +31,7 @@ namespace ChessApi.DTOs.AiPerformance
         public int PerformanceId { get; set; }
         public int GameId { get; set; }
         public string AiLevel { get; set; }             // easy | medium | hard
+        public string? AiColor { get; set; }            // white | black
         public string AlgorithmType { get; set; }       // minimax | alpha_beta
         public decimal AverageDepth { get; set; }
         public int AverageNodesEvaluated { get; set; }

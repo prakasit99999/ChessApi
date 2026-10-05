@@ -1,4 +1,4 @@
-﻿using ChessApi.DTOs.Auth;
+using ChessApi.DTOs.Auth;
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -28,6 +28,35 @@ namespace ChessApi.Controllers.Auth
 
             if (!response.Success)
             {
+                if (response.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
+                    return Unauthorized(response);
+
+                if (response.Message.Contains("not found", StringComparison.OrdinalIgnoreCase))
+                    return NotFound(response);
+
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
+
+        /// <summary>
+        /// เข้าสู่ระบบเฉพาะสำหรับ Admin (รองรับ Username หรือ Email)
+        /// </summary>
+        [HttpPost("admin/login")]
+        [HttpPost("admin-login")]
+        public async Task<IActionResult> AdminLogin([FromBody] AdminLoginRequest request)
+        {
+            var response = await _authService.AdminLoginAsync(request);
+
+            if (response == null)
+                return StatusCode(500, new { message = "Unexpected error.", success = false });
+
+            if (!response.Success)
+            {
+                if (response.Message.Contains("denied", StringComparison.OrdinalIgnoreCase))
+                    return StatusCode(403, response);
+
                 if (response.Message.Contains("password", StringComparison.OrdinalIgnoreCase))
                     return Unauthorized(response);
 

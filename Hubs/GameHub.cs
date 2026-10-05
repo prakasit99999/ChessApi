@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR;
 using ChessApi.DbContext;
 using ChessApi.Models;
-using ChessApi.DTOs.Game; // ใช้ Namespace ของคุณ
+using ChessApi.DTOs.Game;
+using ChessApi.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Threading.Tasks;
@@ -11,10 +12,28 @@ namespace ChessApi.Hubs
     public class GameHub : Hub
     {
         private readonly ChessDbContext _context;
+        private readonly IGameService _gameService;
 
-        public GameHub(ChessDbContext context)
+        public GameHub(ChessDbContext context, IGameService gameService)
         {
             _context = context;
+            _gameService = gameService;
+        }
+
+        public override async Task OnConnectedAsync()
+        {
+            // ส่งตัวเลขสถิติเกมล่าสุดให้ Client ที่เชื่อมต่อเข้ามาทันที
+            try
+            {
+                var counts = await _gameService.GetGameCountsAsync();
+                await Clients.Caller.SendAsync("ReceiveGameCounts", counts);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[GameHub] Error sending initial counts: {ex.Message}");
+            }
+
+            await base.OnConnectedAsync();
         }
 
         // รับข้อมูลเป็น MoveDto.MoveRequest ของคุณ
@@ -101,6 +120,24 @@ namespace ChessApi.Hubs
         {
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, gameId);
             await Clients.Group(gameId).SendAsync("UserLeft", Context.ConnectionId);
+        }
+
+        /// <summary>
+        /// ขอตัวเลข Game Counts ปัจจุบันผ่าน SignalR
+        /// </summary>
+        public async Task<GameCountsDto> GetGameCounts()
+        {
+            var counts = await _gameService.GetGameCountsAsync();
+            await Clients.Caller.SendAsync("ReceiveGameCounts", counts);
+            return counts;
+        }
+
+        /// <summary>
+        /// สั่งกระจายตัวเลข Game Counts ล่าสุดไปยังทุก Client
+        /// </summary>
+        public async Task BroadcastGameCounts()
+        {
+            await _gameService.BroadcastGameCountsAsync();
         }
     }
 }

@@ -5,9 +5,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using ChessApi.DbContext;
 using ChessApi.DTOs.Game;
+using ChessApi.DTOs.User;
+using ChessApi.Hubs;
 using ChessApi.Models;
 using ChessApi.Services.Interfaces;
+using ChessApi.Services.Move;
 using ChessApi.Utilities.Helpers;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ChessApi.Services.Game
@@ -16,11 +20,20 @@ namespace ChessApi.Services.Game
     {
         private readonly ChessDbContext _context;
         private readonly IRatingService _ratingService;
+        private readonly IHubContext<GameHub> _gameHubContext;
+        private readonly IHubContext<UserHub> _userHubContext;
         private static readonly ConcurrentDictionary<int, SemaphoreSlim> _locks = new();
-        public GameService(ChessDbContext context, IRatingService ratingService)
+
+        public GameService(
+            ChessDbContext context, 
+            IRatingService ratingService,
+            IHubContext<GameHub> gameHubContext,
+            IHubContext<UserHub> userHubContext)
         {
             _context = context;
             _ratingService = ratingService;
+            _gameHubContext = gameHubContext;
+            _userHubContext = userHubContext;
         }
 
         // 1️     CREATE GAME
@@ -88,6 +101,8 @@ namespace ChessApi.Services.Game
 
             await _context.SaveChangesAsync();
 
+            _ = BroadcastGameCountsAsync();
+
             return newGame.game_id;
         }
 
@@ -153,6 +168,8 @@ namespace ChessApi.Services.Game
 
                 if (game.black_player != null)
                     await _context.Entry(game.black_player).ReloadAsync();
+
+                _ = BroadcastGameCountsAsync();
 
                 return (true,
                     game.white_player?.rating,
@@ -241,6 +258,8 @@ namespace ChessApi.Services.Game
 
                 if (game.black_player != null)
                     await _context.Entry(game.black_player).ReloadAsync();
+
+                _ = BroadcastGameCountsAsync();
 
                 return (true,
                     game.white_player?.rating,
@@ -366,6 +385,368 @@ namespace ChessApi.Services.Game
 
             foreach (var player in players)
                 player.status = status;
+        }
+
+        // =========================================================
+        // Game Table (ตาราง Game พร้อม Pagination & Filters)
+        // =========================================================
+        public async Task<PagedResult<GameListDto>> GetPagedGamesAsync(GamePagedRequest request)
+        {
+            var query = _context.games
+                .AsNoTracking()
+                .Include(g => g.white_player)
+                .Include(g => g.black_player)
+                .AsQueryable();
+
+            if (request.UserId.HasValue && request.UserId > 0)
+            {
+                query = query.Where(g => g.white_player_id == request.UserId.Value || g.black_player_id == request.UserId.Value);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.GameType))
+            {
+                var cleanType = request.GameType.Trim().ToLowerInvariant();
+                query = query.Where(g => g.game_type == cleanType);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.MatchMode))
+            {
+                var cleanMode = request.MatchMode.Trim().ToLowerInvariant();
+                query = query.Where(g => g.match_mode == cleanMode);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.GameStatus))
+            {
+                var cleanStatus = request.GameStatus.Trim().ToLowerInvariant();
+                query = query.Where(g => g.game_status == cleanStatus);
+            }
+
+            if (!string.IsNullOrWhiteSpace(request.Search))
+            {
+                var term = request.Search.Trim().ToLowerInvariant();
+                query = query.Where(g =>
+                    (g.white_player != null && g.white_player.username.ToLower().Contains(term)) ||
+                    (g.black_player != null && g.black_player.username.ToLower().Contains(term)) ||
+                    (g.result_reason != null && g.result_reason.ToLower().Contains(term)) ||
+                    g.game_id.ToString().Contains(term));
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var pagedGames = await query
+                .OrderByDescending(g => g.created_at)
+                .Skip((request.PageNumber - 1) * request.PageSize)
+                .Take(request.PageSize)
+                .ToListAsync();
+
+            var items = pagedGames.Select(MapToGameListDto).ToList();
+
+            return new PagedResult<GameListDto>
+            {
+                Items = items,
+                PageNumber = request.PageNumber,
+                PageSize = request.PageSize,
+                TotalCount = totalCount
+            };
+        }
+
+        // =========================================================
+        // User Games History (ประวัติเกมของ User คนนั้นๆ)
+        // =========================================================
+        public async Task<List<GameListDto>> GetUserGamesAsync(int userId, int limit = 20)
+        {
+            if (limit <= 0) limit = 20;
+            if (limit > 100) limit = 100;
+
+            var games = await _context.games
+                .AsNoTracking()
+                .Include(g => g.white_player)
+                .Include(g => g.black_player)
+                .Where(g => g.white_player_id == userId || g.black_player_id == userId)
+                .OrderByDescending(g => g.created_at)
+                .Take(limit)
+                .ToListAsync();
+
+            return games.Select(MapToGameListDto).ToList();
+        }
+
+        // =========================================================
+        // Game Detail with Moves (รายละเอียดเกม + รายการตาเดิน)
+        // =========================================================
+        public async Task<GameDetailDto?> GetGameDetailAsync(int gameId)
+        {
+            var game = await _context.games
+                .AsNoTracking()
+                .Include(g => g.white_player)
+                .Include(g => g.black_player)
+                .Include(g => g.moves)
+                .FirstOrDefaultAsync(g => g.game_id == gameId);
+
+            if (game == null)
+                return null;
+
+            var baseDto = MapToGameListDto(game);
+
+            return new GameDetailDto
+            {
+                GameId = baseDto.GameId,
+                GameType = baseDto.GameType,
+                MatchMode = baseDto.MatchMode,
+                GameStatus = baseDto.GameStatus,
+                Result = baseDto.Result,
+                ResultReason = baseDto.ResultReason,
+                MoveCount = baseDto.MoveCount,
+                WhitePlayerId = baseDto.WhitePlayerId,
+                WhitePlayerUsername = baseDto.WhitePlayerUsername,
+                WhitePlayerRating = baseDto.WhitePlayerRating,
+                WhitePlayerType = baseDto.WhitePlayerType,
+                BlackPlayerId = baseDto.BlackPlayerId,
+                BlackPlayerUsername = baseDto.BlackPlayerUsername,
+                BlackPlayerRating = baseDto.BlackPlayerRating,
+                BlackPlayerType = baseDto.BlackPlayerType,
+                Winner = baseDto.Winner,
+                CreatedAt = baseDto.CreatedAt,
+                StartedAt = baseDto.StartedAt,
+                FinishedAt = baseDto.FinishedAt,
+                Moves = game.moves
+                    .OrderBy(m => m.move_number)
+                    .Select(MoveService.MapToMoveDetailDto)
+                    .ToList()
+            };
+        }
+
+        public static GameListDto MapToGameListDto(game g)
+        {
+            return new GameListDto
+            {
+                GameId = g.game_id,
+                GameType = g.game_type,
+                MatchMode = g.match_mode,
+                GameStatus = g.game_status ?? "unknown",
+                Result = g.result,
+                ResultReason = g.result_reason,
+                MoveCount = g.move_count ?? 0,
+
+                WhitePlayerId = g.white_player_id,
+                WhitePlayerUsername = g.white_player?.username,
+                WhitePlayerRating = g.white_player?.rating,
+                WhitePlayerType = g.white_player_type,
+
+                BlackPlayerId = g.black_player_id,
+                BlackPlayerUsername = g.black_player?.username,
+                BlackPlayerRating = g.black_player?.rating,
+                BlackPlayerType = g.black_player_type,
+
+                Winner = g.result switch
+                {
+                    "white_wins" => "White",
+                    "black_wins" => "Black",
+                    "draw" => "Draw",
+                    _ => null
+                },
+
+                CreatedAt = g.created_at,
+                StartedAt = g.started_at,
+                FinishedAt = g.finished_at
+            };
+        }
+
+        //=========================================================
+        // GetGameDetailAdminAsync Details for  Admin see uses playe game 
+        //========================================================= 
+        public async Task<GameDetails?> GetGameDetailAdminAsync(int gameId)
+        {
+            if(gameId <= 0) {
+                return new GameDetails
+                {
+                    Success = false,
+                    Message = "Game ID must be greater than 0"
+                };
+            };
+            var game = await _context.games
+                .AsNoTracking()
+                .Include(g => g.white_player)
+                .Include(g => g.black_player)
+                .Include(g => g.ai_performances)
+                .FirstOrDefaultAsync(g => g.game_id == gameId);
+
+            if (game == null){
+                return new GameDetails
+                {
+                    Success = false,
+                    Message = "Game not found"
+                };
+            }
+
+            // ดึงข้อมูล Move ทั้งหมดที่ game_id ตรงกับ game นั้น (ดึงรายละเอียดแบบเดียวกับ GetMoveByIdAsync ครบทุก field)
+            var moves = await _context.moves
+                .AsNoTracking()
+                .Where(m => m.game_id == gameId)
+                .OrderBy(m => m.move_number)
+                .ToListAsync();
+
+            var moveDetails = moves.Select(MoveService.MapToMoveDetailDto).ToList();
+
+            var aiPerf = game.ai_performances?.FirstOrDefault();
+            var lastAiMove = moves.LastOrDefault(m =>
+                m.ai_evaluation_score.HasValue ||
+                m.ai_depth_searched.HasValue ||
+                m.ai_nodes_evaluated.HasValue);
+
+            AiPerformanceDto? aiPerformance = null;
+            bool isAiGame = (game.game_type != null && (game.game_type == "single_player" || game.game_type == "ai_vs_ai"))
+                || (game.white_player_type != null && game.white_player_type.StartsWith("ai", StringComparison.OrdinalIgnoreCase))
+                || (game.black_player_type != null && game.black_player_type.StartsWith("ai", StringComparison.OrdinalIgnoreCase));
+
+            if (aiPerf != null || lastAiMove != null || isAiGame)
+            {
+                aiPerformance = new AiPerformanceDto
+                {
+                    AlgorithmType = aiPerf?.algorithm_type ?? lastAiMove?.algorithm_type,
+                    EvaluationScore = lastAiMove?.ai_evaluation_score != null ? (float)lastAiMove.ai_evaluation_score : null,
+                    AiDepthSearched = (int?)(aiPerf?.average_depth) ?? lastAiMove?.ai_depth_searched,
+                    AiNodesEvaluated = aiPerf?.average_nodes_evaluated ?? lastAiMove?.ai_nodes_evaluated,
+                    AiMoveTimeMs = aiPerf?.average_move_time_ms ?? lastAiMove?.move_time_ms
+                };
+            }
+
+            return new GameDetails
+            {
+                GameId = game.game_id,
+                GameType = game.game_type,
+                MatchMode = game.match_mode,
+                GameStatus = game.game_status,
+                Result = game.result,
+                ResultReason = game.result_reason,
+                WhitePlayer = new PlayerDto
+                {
+                    UserId = game.white_player_id ?? 0,
+                    Username = game.white_player?.username,
+                    Rating = game.white_player?.rating ?? 0,
+                    PlayerType = game.white_player_type
+                },
+                BlackPlayer = new PlayerDto
+                {
+                    UserId = game.black_player_id ?? 0,
+                    Username = game.black_player?.username,
+                    Rating = game.black_player?.rating ?? 0,
+                    PlayerType = game.black_player_type
+                },
+                AiPerformance = aiPerformance,
+                Moves = moveDetails
+            };
+        }
+
+        // =========================================================
+        // Game Counts & Statistics (สถิติเกมทั้งหมดสำหรับ REST API & SignalR)
+        // =========================================================
+        public async Task<GameCountsDto> GetGameCountsAsync()
+        {
+            // Total Games: นับจำนวน Row ทั้งหมดในตาราง game
+            var totalGames = await _context.games.CountAsync();
+
+            // Active Matches: เช็กสถานะ game_status == "in_progress" หรือ "active"
+            var activeMatches = await _context.games
+                .CountAsync(g => g.game_status == "in_progress" || g.game_status == "active");
+
+            // AI Matches: จำนวนเกมที่มี AI ร่วมเล่น เช็ก game_type เป็น "single_player", "ai_vs_ai" หรือประเภทผู้เล่นขึ้นต้นด้วย "ai"
+            var aiMatches = await _context.games
+                .CountAsync(g => g.game_type == "single_player"
+                              || g.game_type == "ai_vs_ai"
+                              || (g.white_player_type != null && g.white_player_type.StartsWith("ai"))
+                              || (g.black_player_type != null && g.black_player_type.StartsWith("ai")));
+
+            // Ranked Games: เช็กโหมดการแข่งขัน match_mode == "ranked"
+            var rankedGames = await _context.games
+                .CountAsync(g => g.match_mode == "ranked");
+
+            return new GameCountsDto
+            {
+                TotalGames = totalGames,
+                ActiveMatches = activeMatches,
+                AiMatches = aiMatches,
+                RankedGames = rankedGames
+            };
+        }
+
+        public async Task BroadcastGameCountsAsync()
+        {
+            var counts = await GetGameCountsAsync();
+            await _gameHubContext.Clients.All.SendAsync("ReceiveGameCounts", counts);
+            await _userHubContext.Clients.All.SendAsync("ReceiveGameCounts", counts);
+        }
+
+        // =========================================================
+        // Chart Stats (สถิติแยกตามวัน สำหรับแสดงกราฟ)
+        // =========================================================
+        public async Task<List<GameChartDataDto>> GetChartStatsAsync(GameChartRequest request)
+        {
+            // กำหนดช่วงวันที่
+            var endDate = (request.EndDate ?? DateTime.UtcNow).Date.AddDays(1); // ถึงสิ้นสุดวันนั้น
+            var startDate = request.StartDate.HasValue
+                ? request.StartDate.Value.Date
+                : DateTime.UtcNow.Date.AddDays(-(request.Days - 1));
+
+            // ดึงเกมทั้งหมดในช่วงวันที่กำหนด
+            var games = await _context.games
+                .AsNoTracking()
+                .Where(g => g.created_at != null
+                         && g.created_at.Value >= startDate
+                         && g.created_at.Value < endDate)
+                .Select(g => new
+                {
+                    Date = g.created_at!.Value.Date,
+                    g.game_type,
+                    g.white_player_type,
+                    g.black_player_type
+                })
+                .ToListAsync();
+
+            // GroupBy วัน
+            var grouped = games
+                .GroupBy(g => g.Date)
+                .Select(grp =>
+                {
+                    // AI Games: game_type เป็น single_player, ai_vs_ai หรือ player_type ขึ้นต้นด้วย "ai"
+                    var aiGames = grp.Count(g =>
+                        g.game_type == "single_player"
+                        || g.game_type == "ai_vs_ai"
+                        || (g.white_player_type != null && g.white_player_type.StartsWith("ai"))
+                        || (g.black_player_type != null && g.black_player_type.StartsWith("ai")));
+
+                    // Multiplayer: online_multiplayer, local_multiplayer
+                    var multiplayerGames = grp.Count(g =>
+                        g.game_type == "online_multiplayer"
+                        || g.game_type == "local_multiplayer");
+
+                    return new GameChartDataDto
+                    {
+                        DateLabel = grp.Key.ToString("dd/MM/yyyy"),
+                        DateIso   = grp.Key.ToString("yyyy-MM-dd"),
+                        AiGames          = aiGames,
+                        MultiplayerGames = multiplayerGames,
+                        TotalGames       = grp.Count()
+                    };
+                })
+                .OrderBy(d => d.DateIso)
+                .ToList();
+
+            // เติมวันที่ขาดหายให้ครบทุกวันในช่วง (เพื่อให้กราฟแสดงแกน X ต่อเนื่อง)
+            var result = new List<GameChartDataDto>();
+            for (var day = startDate; day < endDate; day = day.AddDays(1))
+            {
+                var existing = grouped.FirstOrDefault(d => d.DateIso == day.ToString("yyyy-MM-dd"));
+                result.Add(existing ?? new GameChartDataDto
+                {
+                    DateLabel        = day.ToString("dd/MM/yyyy"),
+                    DateIso          = day.ToString("yyyy-MM-dd"),
+                    AiGames          = 0,
+                    MultiplayerGames = 0,
+                    TotalGames       = 0
+                });
+            }
+
+            return result;
         }
     }
 }

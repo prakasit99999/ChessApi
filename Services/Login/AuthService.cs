@@ -1,4 +1,4 @@
-﻿using ChessApi.DTOs.Auth;
+using ChessApi.DTOs.Auth;
 using ChessApi.Models;
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Identity;
@@ -48,8 +48,13 @@ namespace ChessApi.Services.Login
             _context.users.Update(user);
             await _context.SaveChangesAsync();
 
-            // 5. Generate Token
-            var token = _jwtService.GenerateToken(user.user_id, user.username);
+            // 5. Check role
+            bool isAdmin = user.user_id == 1 ||
+                           string.Equals(user.username, "admin", StringComparison.OrdinalIgnoreCase);
+            var role = isAdmin ? "Admin" : "User";
+
+            // 6. Generate Token
+            var token = _jwtService.GenerateToken(user.user_id, user.username, role);
 
             return new AuthResponse
             {
@@ -59,6 +64,88 @@ namespace ChessApi.Services.Login
                 Username = user.username,
                 Email = user.email,
                 Token = token,
+                Role = role,
+                IsAdmin = isAdmin,
+                Status = user.status.ToString()
+            };
+        }
+
+        public async Task<AdminAuthResponse> AdminLoginAsync(AdminLoginRequest request)
+        {
+            var identifier = request.GetIdentifier();
+            if (string.IsNullOrWhiteSpace(identifier) || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return new AdminAuthResponse
+                {
+                    Success = false,
+                    Message = "Username or Email, and Password are required."
+                };
+            }
+            
+
+            var user = await _context.users.FirstOrDefaultAsync(u =>
+                u.username == identifier || u.email == identifier);
+
+            if (user == null)
+            {
+                return new AdminAuthResponse
+                {
+                    Success = false,
+                    Message = "Admin account not found."
+                };
+            }
+            // ตรวจสอบว่าผู้ใช้ตรงกับผู้ใช้ที่พยายามเข้าสู่ระบบหรือไม่ หากตรงกันให้ส่งข้อความแจ้งเตือน   
+            if (request.Username != user.username)
+            {
+                return new AdminAuthResponse
+                {
+                    Success = false,
+                    Message = "Please provide either Username "
+                };
+            }
+
+
+            // ตรวจสอบสิทธิ์ว่าคือ Admin (user_id == 1 หรือ username == 'admin' หรือ email == 'admin@chess.com')
+            bool isAdmin = user.user_id == 1 ||
+                           string.Equals(user.username, "admin", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(user.email, "admin@chess.com", StringComparison.OrdinalIgnoreCase);
+
+            if (!isAdmin)
+            {
+                return new AdminAuthResponse
+                {
+                    Success = false,
+                    Message = "Access denied: Account is not an administrator."
+                };
+            }
+           
+
+            var result = _passwordHasher.VerifyHashedPassword(user, user.password_hash, request.Password);
+            if (result == PasswordVerificationResult.Failed)
+            {
+                return new AdminAuthResponse
+                {
+                    Success = false,
+                    Message = "Invalid admin password."
+                };
+            }
+
+            user.status = "Online";
+            _context.users.Update(user);
+            await _context.SaveChangesAsync();
+
+            var token = _jwtService.GenerateToken(user.user_id, user.username, "Admin");
+
+            return new AdminAuthResponse
+            {
+                Success = true,
+                Message = "Admin login successful.",
+                UserId = user.user_id,
+                Username = user.username,
+                Email = user.email,
+                Token = token,
+                Role = "Admin",
+                IsAdmin = true,
                 Status = user.status.ToString()
             };
         }

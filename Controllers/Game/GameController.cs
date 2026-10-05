@@ -1,4 +1,4 @@
-﻿﻿using ChessApi.DTOs.Game;
+using ChessApi.DTOs.Game;
 using ChessApi.Services.Interfaces;
 using ChessApi.Utilities.Helpers;
 using Microsoft.AspNetCore.Mvc;
@@ -13,10 +13,12 @@ namespace ChessApi.Controllers.Game
     public class GameController : ControllerBase
     {
         private readonly IGameService _gameService;
+        private readonly IMoveService _moveService;
 
-        public GameController(IGameService gameService)
+        public GameController(IGameService gameService, IMoveService moveService)
         {
             _gameService = gameService;
+            _moveService = moveService;
         }
 
         // 1️ START GAME (ONLINE)
@@ -323,6 +325,107 @@ namespace ChessApi.Controllers.Game
             });
         }
 
-    }
+        // 12️ GET PAGED GAMES (ตาราง Game สำหรับแสดงผลใน Frontend)
+        [HttpGet("paged")]
+        [HttpGet("list")]
+        [HttpGet]
+        public async Task<IActionResult> GetPagedGames([FromQuery] GamePagedRequest request)
+        {
+            var result = await _gameService.GetPagedGamesAsync(request);
+            return Ok(result);
+        }
 
+        // 13️ GET USER GAMES (ประวัติเกมของ User)
+        [HttpGet("user/{userId:int}")]
+        public async Task<IActionResult> GetUserGames([FromRoute] int userId, [FromQuery] int limit = 20)
+        {
+            if (userId <= 0)
+                return BadRequest(new { Error = "Invalid user ID." });
+
+            var result = await _gameService.GetUserGamesAsync(userId, limit);
+            return Ok(result);
+        }
+
+        // 14️ GET GAME DETAIL WITH MOVES (รายละเอียดเกมพร้อมตาเดินทั้งหมด)
+        [HttpGet("{gameId:int}")]
+        [HttpGet("detail/{gameId:int}")]
+        public async Task<IActionResult> GetGameDetail([FromRoute] int gameId)
+        {
+            if (gameId <= 0)
+                return BadRequest(new { Error = "Invalid game ID." });
+
+            var result = await _gameService.GetGameDetailAsync(gameId);
+            if (result == null)
+                return NotFound(new { Error = "Game not found." });
+
+            return Ok(result);
+        }
+
+        // 15️ GET GAME MOVES (รายละเอียด Move ทั้งหมดในเกม)
+        [HttpGet("{gameId:int}/moves")]
+        public async Task<IActionResult> GetGameMoves([FromRoute] int gameId)
+        {
+            if (gameId <= 0)
+                return BadRequest(new { Error = "Invalid game ID." });
+
+            var moves = await _moveService.GetGameMovesAsync(gameId);
+            return Ok(moves);
+        }
+
+        // 16️ GET GAME COUNTS & STATS (API แยกต่างหากสำหรับสถิติตาราง Game)
+        /// <summary>
+        /// ดึงสถิติตาราง Game ทั้งหมด:
+        /// - Total Games: จำนวนแถวทั้งหมดในตาราง game
+        /// - Active Matches: สถานะ in_progress หรือ active
+        /// - AI Matches: game_type เป็น single_player, ai_vs_ai หรือมีผู้เล่นเป็น ai
+        /// - Ranked Games: match_mode == "ranked"
+        /// (สามารถเรียกผ่าน REST API หรือผ่าน SignalR ที่ /gamehub หรือ /userhub Event "ReceiveGameCounts")
+        /// </summary>
+        [HttpGet("counts")]
+        [HttpGet("stats")]
+        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+        public async Task<IActionResult> GetGameCounts()
+        {
+            var counts = await _gameService.GetGameCountsAsync();
+            return Ok(counts);
+        }
+
+        // 17️ GET GAME CHART STATS (สถิติแยกตามวัน สำหรับแสดงกราฟเส้น)
+        /// <summary>
+        /// ดึงข้อมูลสถิติเกมแยกตามวัน สำหรับใช้วาดกราฟแสดงแนวโน้ม
+        /// - AiGames: จำนวนเกมกับ AI ในวันนั้น (single_player, ai_vs_ai)
+        /// - MultiplayerGames: จำนวนเกม PvP ในวันนั้น (online_multiplayer, local_multiplayer)
+        /// - TotalGames: รวมทั้งหมดในวันนั้น
+        /// Query Params: days=30 (ย้อนหลัง 30 วัน) หรือ startDate=2026-09-01&endDate=2026-10-04
+        /// </summary>
+        [HttpGet("chart-stats")]
+        [Microsoft.AspNetCore.Authorization.AllowAnonymous]
+        public async Task<IActionResult> GetChartStats([FromQuery] GameChartRequest request)
+        {
+            var data = await _gameService.GetChartStatsAsync(request);
+            return Ok(data);
+        }
+
+        // 18️ GET GAME DETAIL ADMIN (รายละเอียดเกมแบบละเอียด พร้อม Player, AI Performance และ Moves สำหรับ Frontend)
+        /// <summary>
+        /// ดึงข้อมูลรายละเอียดของเกมสำหรับ Admin หรือหน้าแสดงรายละเอียดเกม:
+        /// - ข้อมูลเกม (GameId, GameType, MatchMode, GameStatus, Result, ResultReason)
+        /// - ผู้เล่น WhitePlayer & BlackPlayer (UserId, Username, Rating, PlayerType)
+        /// - AiPerformance (AlgorithmType, EvaluationScore, AiDepthSearched, AiNodesEvaluated, AiMoveTimeMs)
+        /// - Moves (รายการตาเดินทั้งหมดของเกม พร้อมรายละเอียดพิกัดและสถิติ AI)
+        /// </summary>
+        [HttpGet("admin/{gameId:int}")]
+        [HttpGet("admin-detail/{gameId:int}")]
+        public async Task<IActionResult> GetGameDetailAdmin([FromRoute] int gameId)
+        {
+            if (gameId <= 0)
+                return BadRequest(new { Error = "Invalid game ID." });
+
+            var result = await _gameService.GetGameDetailAdminAsync(gameId);
+            if (result == null)
+                return NotFound(new { Error = "Game not found." });
+
+            return Ok(result);
+        }
+    }
 }

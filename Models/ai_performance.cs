@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
@@ -8,6 +8,7 @@ namespace ChessApi.Models;
 
 [Table("ai_performance")]
 [Index("game_id", Name = "game_id")]
+[Index("game_id", "ai_color", Name = "uq_game_ai_color", IsUnique = true)]
 public partial class ai_performance
 {
     [Key]
@@ -17,6 +18,9 @@ public partial class ai_performance
 
     [Column(TypeName = "enum('easy','medium','hard')")]
     public string? ai_level { get; set; }
+
+    [Column(TypeName = "enum('white','black')")]
+    public string? ai_color { get; set; }
 
     [Column(TypeName = "enum('minimax','alpha_beta')")]
     public string? algorithm_type { get; set; }

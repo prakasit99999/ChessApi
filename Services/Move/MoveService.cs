@@ -1,4 +1,4 @@
-﻿﻿using ChessApi.DbContext;
+﻿using ChessApi.DbContext;
 using ChessApi.DTOs.Game;
 using ChessApi.Models;
 using ChessApi.Services.Interfaces;
@@ -184,6 +184,108 @@ namespace ChessApi.Services.Move
                 Status = null,
                 Winner = null
             };
+        }
+
+        // =========================================================
+        // Game Moves History (รายละเอียด Move ทั้งหมดในเกม)
+        // =========================================================
+        public async Task<List<MoveDto.MoveDetailDto>> GetGameMovesAsync(int gameId)
+        {
+            var moves = await _context.moves
+                .AsNoTracking()
+                .Where(m => m.game_id == gameId)
+                .OrderBy(m => m.move_number)
+                .ToListAsync();
+
+            return moves.Select(MapToMoveDetailDto).ToList();
+        }
+
+        // =========================================================
+        // Single Move Detail (รายละเอียด Move เดี่ยวตาม ID)
+        // =========================================================
+        public async Task<MoveDto.MoveDetailDto?> GetMoveByIdAsync(int moveId)
+        {
+            var move = await _context.moves
+                .AsNoTracking()
+                .FirstOrDefaultAsync(m => m.move_id == moveId);
+
+            return move == null ? null : MapToMoveDetailDto(move);
+        }
+
+        public static MoveDto.MoveDetailDto MapToMoveDetailDto(move m)
+        {
+            
+            var fromPos = $"{(char)('a' + m.start_x)}{m.start_y + 1}";
+            var toPos = $"{(char)('a' + m.end_x)}{m.end_y + 1}";
+
+            return new MoveDto.MoveDetailDto
+            {
+                MoveId = m.move_id,
+                GameId = m.game_id,
+                MoveNumber = m.move_number,
+                StartX = m.start_x,
+                StartY = m.start_y,
+                EndX = m.end_x,
+                EndY = m.end_y,
+                FromPosition = fromPos,
+                ToPosition = toPos,
+                MoveText = $"{fromPos} -> {toPos}",
+                San = FormatSanNotation(m, fromPos, toPos),
+                PieceType = m.piece_type ?? string.Empty,
+                Team = m.team ?? string.Empty,
+                IsCapture = m.is_capture ?? false,
+                CapturedPieceType = m.captured_piece_type,
+                CapturedPieceTeam = m.captured_piece_team,
+                CapturedX = m.captured_x,
+                CapturedY = m.captured_y,
+                IsCastling = m.is_castling ?? false,
+                IsEnPassant = m.is_en_passant ?? false,
+                IsCheck = m.is_check ?? false,
+                IsPawnTwoStep = m.is_pawn_two_step ?? false,
+                PieceHasMovedBefore = m.piece_has_moved_before ?? false,
+                PromotedFrom = m.promoted_from,
+                PromotedTo = m.promoted_to,
+                AlgorithmType = m.algorithm_type,
+                AiEvaluationScore = m.ai_evaluation_score,
+                AiDepthSearched = m.ai_depth_searched,
+                AiNodesEvaluated = m.ai_nodes_evaluated,
+                MoveTimeMs = m.move_time_ms,
+                CreatedAt = m.created_at
+            };
+        }
+
+        private static string FormatSanNotation(move m, string fromPos, string toPos)
+        {
+            if (m.is_castling == true)
+            {
+                return m.end_x > m.start_x ? "O-O" : "O-O-O";
+            }
+
+            var piece = m.piece_type?.ToLowerInvariant() switch
+            {
+                "knight" => "N",
+                "bishop" => "B",
+                "rook" => "R",
+                "queen" => "Q",
+                "king" => "K",
+                _ => "" // pawn
+            };
+
+            var isCapture = m.is_capture == true || !string.IsNullOrEmpty(m.captured_piece_type);
+            var captureMark = isCapture ? "x" : "";
+
+            if (string.IsNullOrEmpty(piece) && isCapture)
+            {
+                piece = fromPos.Length > 0 ? fromPos.Substring(0, 1) : ""; // e.g. exd5
+            }
+
+            var promoMark = !string.IsNullOrEmpty(m.promoted_to)
+                ? $"={m.promoted_to.Substring(0, 1).ToUpper()}"
+                : "";
+
+            var checkMark = m.is_check == true ? "+" : "";
+
+            return $"{piece}{captureMark}{toPos}{promoMark}{checkMark}";
         }
     }
 }

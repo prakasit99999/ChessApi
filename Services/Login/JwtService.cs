@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -18,12 +18,14 @@ namespace ChessApi.Services.Login
             _issuer = config["JwtSettings:Issuer"];
         }
 
-        public string GenerateToken(int userId, string username)
+        public string GenerateToken(int userId, string username, string role = "User")
         {
-            var claims = new[]
+            var claims = new List<Claim>
             {
                  new Claim("id", userId.ToString()),
-                 new Claim("username", username)
+                 new Claim("username", username),
+                 new Claim(ClaimTypes.Role, role),
+                 new Claim("role", role)
             };
             Debug.WriteLine("_issuer: " + _issuer);
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_key));

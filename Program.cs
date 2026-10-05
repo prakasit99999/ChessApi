@@ -21,7 +21,7 @@ namespace ChessApi
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             // Configure services for the application.
@@ -116,6 +116,15 @@ namespace ChessApi
             });
 
             var app = builder.Build();
+
+            // 🔹 Seed Admin (ลำดับที่ 1) เมื่อเริ่มระบบ
+            using (var scope = app.Services.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<ChessDbContext>();
+                var passwordHasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher<user>>();
+                await DbInitializer.SeedAdminAsync(context, passwordHasher);
+            }
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {
@@ -133,7 +142,8 @@ namespace ChessApi
             app.UseAuthorization();
             app.MapControllers();
             app.MapHub<GameHub>("/gamehub");
-            app.Run();
+            app.MapHub<UserHub>("/userhub");
+            await app.RunAsync();
         }
     }
 }

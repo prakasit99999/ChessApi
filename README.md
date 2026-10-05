@@ -124,3 +124,9 @@ new file mode 100644
 +├─ README.md
 +└─ WeatherForecast.cs
 +```
+User ID	1 (ลำดับที่ 1)
+Username	admin
+Email	admin@chess.com
+Password	Admin@1234
+Role	Admin
+Rating	2000
