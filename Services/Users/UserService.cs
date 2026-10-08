@@ -34,6 +34,7 @@ namespace ChessApi.Services.Users
         public async Task<ProfileResponse> GetProfileByIdAsync(int userId)
         {
             var user = await _context.users.AsNoTracking().FirstOrDefaultAsync(u => u.user_id == userId);
+
             if (user == null)
             {
                 return new ProfileResponse
@@ -135,6 +136,14 @@ namespace ChessApi.Services.Users
 
         public async Task<UpdateProfileResponse> AdminUpdateUserAsync(int userId, AdminUpdateUserRequest request)
         {
+            if(userId <= 0) {
+                return new UpdateProfileResponse
+                {
+                    Success = false,
+                    Message = "User ID must be greater than 0"
+                };
+            };
+       
             var user = await _context.users.FirstOrDefaultAsync(u => u.user_id == userId);
             if (user == null)
             {
@@ -182,42 +191,43 @@ namespace ChessApi.Services.Users
                     user.email = newEmail;
                 }
             }
+     
 
             // Update Password if requested (Admin can reset password without old password)
             var newPassword = !string.IsNullOrWhiteSpace(request.NewPassword)
                 ? request.NewPassword
                 : request.Password;
 
+            // 1. ตรวจสอบว่ามี password_hash เดิมอยู่หรือไม่ ก่อนทำการ Verify (ป้องกัน NullReferenceException)
             if (!string.IsNullOrWhiteSpace(newPassword))
             {
-                user.password_hash = _passwordHasher.HashPassword(user, newPassword);
-            }
+                // ตรวจสอบว่ารหัสผ่านใหม่ซ้ำกับรหัสผ่านเดิมหรือไม่
+                if (!string.IsNullOrEmpty(user.password_hash))
+                {
+                    var verifyResult = _passwordHasher.VerifyHashedPassword(user, user.password_hash, newPassword);
 
+                    if (verifyResult == PasswordVerificationResult.Success ||
+                        verifyResult == PasswordVerificationResult.SuccessRehashNeeded)
+                    {
+                        return new UpdateProfileResponse
+                        {
+                            Success = false,
+                            Message = "New password cannot be the same as the current password."
+                        };
+                    }
+                }
+              user.password_hash = _passwordHasher.HashPassword(user, newPassword);
+            }
+    
+         
             // Update Rating if provided
             if (request.Rating.HasValue)
             {
                 user.rating = request.Rating.Value;
             }
 
-            // Update Status if provided
-            bool statusChanged = false;
-            if (!string.IsNullOrWhiteSpace(request.Status))
-            {
-                var cleanStatus = request.Status.Trim().ToLowerInvariant();
-                if (user.status != cleanStatus)
-                {
-                    user.status = cleanStatus;
-                    statusChanged = true;
-                }
-            }
-
-            _context.users.Update(user);
+         
             await _context.SaveChangesAsync();
-
-            if (statusChanged)
-            {
-                await BroadcastUserCountsAsync();
-            }
 
             return new UpdateProfileResponse
             {

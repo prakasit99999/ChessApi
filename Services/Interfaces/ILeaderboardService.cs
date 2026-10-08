@@ -7,5 +7,6 @@ namespace ChessApi.Services.Interfaces
     public interface ILeaderboardService
     {
         Task<IEnumerable<LeaderboardDto>> GetLeaderboardAsync();
+        Task<DashboardOverviewDto> GetDashboardOverviewAsync();
     }
 }

@@ -13,6 +13,7 @@ using ChessApi.Services.Users;
 using ChessApi.Services.Invites;
 using ChessApi.Hubs;
 using Microsoft.AspNetCore.Identity;
+using ChessApi.Services.Notifications;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -101,6 +102,7 @@ namespace ChessApi
             builder.Services.AddScoped<IRatingService, RatingService>();
             builder.Services.AddScoped<IMoveService, MoveService>();
             builder.Services.AddScoped<IInviteService, InviteService>();
+            builder.Services.AddSingleton<INotificationService, NotificationService>();
             builder.Services.AddSignalR();
             builder.Services.AddScoped<JwtService>();    // Register PasswordHasher and Jwt
 
@@ -143,6 +145,7 @@ namespace ChessApi
             app.MapControllers();
             app.MapHub<GameHub>("/gamehub");
             app.MapHub<UserHub>("/userhub");
+            app.MapHub<NotificationHub>("/notificationhub");
             await app.RunAsync();
         }
     }

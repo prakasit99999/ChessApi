@@ -1,6 +1,8 @@
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Data;
+
 
 namespace ChessApi.Controllers
 {
@@ -21,6 +23,14 @@ namespace ChessApi.Controllers
         {
             var leaderboard = await _leaderboardService.GetLeaderboardAsync();
             return Ok(leaderboard);
+        }
+
+        [HttpGet("admin/dashboard")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetDashboardOverview()
+        {
+            var overview = await _leaderboardService.GetDashboardOverviewAsync();
+            return Ok(overview);
         }
     }
 }

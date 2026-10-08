@@ -81,7 +81,7 @@ namespace ChessApi.Services.Login
                     Message = "Username or Email, and Password are required."
                 };
             }
-            
+
 
             var user = await _context.users.FirstOrDefaultAsync(u =>
                 u.username == identifier || u.email == identifier);
@@ -118,7 +118,7 @@ namespace ChessApi.Services.Login
                     Message = "Access denied: Account is not an administrator."
                 };
             }
-           
+
 
             var result = _passwordHasher.VerifyHashedPassword(user, user.password_hash, request.Password);
             if (result == PasswordVerificationResult.Failed)

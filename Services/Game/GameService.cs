@@ -22,18 +22,21 @@ namespace ChessApi.Services.Game
         private readonly IRatingService _ratingService;
         private readonly IHubContext<GameHub> _gameHubContext;
         private readonly IHubContext<UserHub> _userHubContext;
+        private readonly INotificationService _notificationService;
         private static readonly ConcurrentDictionary<int, SemaphoreSlim> _locks = new();
 
         public GameService(
             ChessDbContext context, 
             IRatingService ratingService,
             IHubContext<GameHub> gameHubContext,
-            IHubContext<UserHub> userHubContext)
+            IHubContext<UserHub> userHubContext,
+            INotificationService notificationService)
         {
             _context = context;
             _ratingService = ratingService;
             _gameHubContext = gameHubContext;
             _userHubContext = userHubContext;
+            _notificationService = notificationService;
         }
 
         // 1️     CREATE GAME
@@ -99,9 +102,24 @@ namespace ChessApi.Services.Game
                 await SetUsersStatusByIdsAsync(new[] { whiteId.Value, blackId.Value }, "playing");
             }
 
+            // ดึงชื่อของผู้เล่นสำหรับแสดงในแจ้งเตือนของ Admin
+            string whiteName = dto.WhitePlayerType ?? "Player";
+            string blackName = dto.BlackPlayerType ?? "Player";
+            if (whiteId.HasValue)
+            {
+                var wUser = await _context.users.FindAsync(whiteId.Value);
+                if (wUser != null) whiteName = wUser.username;
+            }
+            if (blackId.HasValue)
+            {
+                var bUser = await _context.users.FindAsync(blackId.Value);
+                if (bUser != null) blackName = bUser.username;
+            }
+
             await _context.SaveChangesAsync();
 
             _ = BroadcastGameCountsAsync();
+            _ = _notificationService.NotifyGameStartedAsync(newGame.game_id, dto.GameType, whiteName, blackName);
 
             return newGame.game_id;
         }
@@ -170,6 +188,7 @@ namespace ChessApi.Services.Game
                     await _context.Entry(game.black_player).ReloadAsync();
 
                 _ = BroadcastGameCountsAsync();
+                _ = _notificationService.NotifyGameEndedAsync(game.game_id, game.result ?? "Completed", game.result_reason);
 
                 return (true,
                     game.white_player?.rating,
@@ -260,6 +279,7 @@ namespace ChessApi.Services.Game
                     await _context.Entry(game.black_player).ReloadAsync();
 
                 _ = BroadcastGameCountsAsync();
+                _ = _notificationService.NotifyGameEndedAsync(game.game_id, game.result ?? "Resigned", game.result_reason);
 
                 return (true,
                     game.white_player?.rating,

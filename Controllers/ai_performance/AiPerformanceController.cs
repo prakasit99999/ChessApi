@@ -2,6 +2,7 @@ using ChessApi.DTOs.AiPerformance;
 using ChessApi.Services.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using System.Threading.Tasks;
 
 namespace ChessApi.Controllers.ai_performance
@@ -38,6 +39,7 @@ namespace ChessApi.Controllers.ai_performance
                 return NotFound(new { Message = "AI performance record not found" });
             return Ok(aiPerformance);
         }
+
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] AiPerformanceUpdateDto dto)
         {
@@ -52,6 +54,23 @@ namespace ChessApi.Controllers.ai_performance
             {
                 return NotFound(new { Message = ex.Message });
             }
+        }
+
+        [HttpGet("admin/get-all")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAll()
+        {
+            var aiPerformance = await _aiPerformanceService.GetAllAiPerformanceAsync();
+            return Ok(aiPerformance);
+        }
+
+        [HttpGet("admin/Analytic")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAnalytic([FromQuery] int depth = 4, [FromQuery] int maxDepth = 5)
+        {
+            int safeDepth = Math.Min(depth, maxDepth);
+            var result = await _aiPerformanceService.GetAiPerformanceAnalyticAsync(safeDepth);
+            return Ok(result);
         }
     }
 }

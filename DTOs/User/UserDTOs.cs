@@ -37,7 +37,6 @@ namespace ChessApi.DTOs.User
         public string? NewPassword { get; set; }
         public string? Password { get; set; }
         public int? Rating { get; set; }
-        public string? Status { get; set; }
     }
 
     public class UpdateProfileResponse
