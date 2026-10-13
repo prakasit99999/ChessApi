@@ -106,5 +106,11 @@ namespace ChessApi.DTOs.User
         public int Offline { get; set; }
         public int Pending { get; set; }
     }
+
+    public class DeleteUserResponse
+    {
+        public bool Success { get; set; } = false;
+        public string? Message { get; set; } = null;
+    }
 }
 

@@ -87,11 +87,9 @@ namespace ChessApi.Controllers.Admin
             return Ok(profile);
         }
 
-        /// <summary>
         /// Admin แก้ไขข้อมูล User ใดๆ ตาม ID
         /// (PUT /api/admin/users/{id} หรือ PUT /api/admin/user/{id})
         /// สามารถแก้ไข Username, Email, Password, Rating, Status
-        /// </summary>
         [Authorize(Roles = "Admin")]
         [HttpPut("users/{id:int}")]
         [HttpPut("user/{id:int}")]
@@ -103,6 +101,34 @@ namespace ChessApi.Controllers.Admin
             }
 
             var result = await _userService.AdminUpdateUserAsync(id, request);
+            if (!result.Success)
+            {
+                if (result.Message?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return NotFound(result);
+                }
+
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Admin ลบ User ใดๆ ตาม ID
+        /// (DELETE /api/admin/users/{id} หรือ DELETE /api/admin/user/{id})
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("users/{id:int}")]
+        [HttpDelete("user/{id:int}")]
+        public async Task<IActionResult> DeleteUser([FromRoute] int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new { message = "Invalid user id", success = false });
+            }
+
+            var result = await _userService.DeleteUserAsync(id);
             if (!result.Success)
             {
                 if (result.Message?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)

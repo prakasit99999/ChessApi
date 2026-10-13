@@ -369,6 +369,61 @@ namespace ChessApi.Services.Users
             await _hubContext.Clients.All.SendAsync("ReceiveUserCounts", counts);
         }
 
+        public async Task<DeleteUserResponse> DeleteUserAsync(int userId)
+        {
+            if (userId <= 0)
+            {
+                return new DeleteUserResponse
+                {
+                    Success = false,
+                    Message = "User ID must be greater than 0."
+                };
+            }
+
+            var user = await _context.users.FirstOrDefaultAsync(u => u.user_id == userId);
+            if (user == null)
+            {
+                return new DeleteUserResponse
+                {
+                    Success = false,
+                    Message = $"User with ID {userId} not found."
+                };
+            }
+
+            // Protect primary admin account
+            bool isAdmin = user.user_id == 1 ||
+                           string.Equals(user.username, "admin", StringComparison.OrdinalIgnoreCase) ||
+                           string.Equals(user.email, "admin@chess.com", StringComparison.OrdinalIgnoreCase);
+
+            if (isAdmin)
+            {
+                return new DeleteUserResponse
+                {
+                    Success = false,
+                    Message = "Cannot delete the main admin account."
+                };
+            }
+
+            // Remove associated matchmaking queue entries directly
+            await _context.Database.ExecuteSqlInterpolatedAsync($"DELETE FROM matchmaking_queue WHERE user_id = {userId}");
+
+            // Nullify player references in game history to avoid FK constraint violations
+            await _context.Database.ExecuteSqlInterpolatedAsync($"UPDATE games SET white_player_id = NULL WHERE white_player_id = {userId}");
+            await _context.Database.ExecuteSqlInterpolatedAsync($"UPDATE games SET black_player_id = NULL WHERE black_player_id = {userId}");
+
+            _context.users.Remove(user);
+            await _context.SaveChangesAsync();
+
+            // Broadcast real-time user counts update via SignalR
+            await BroadcastUserCountsAsync();
+
+            return new DeleteUserResponse
+            {
+                Success = true,
+                Message = $"User '{user.username}' (ID: {userId}) deleted successfully."
+            };
+        }
+
         private static ProfileResponse MapToProfileResponse(user user, bool success = true, string message = "Profile retrieved successfully")
         {
             var gamesPlayed = user.games_played ?? 0;

@@ -13,5 +13,6 @@ namespace ChessApi.Services.Interfaces
         Task<PagedResult<UserListDto>> GetPagedUsersAsync(UserPagedRequest request);
         Task<UserCountsDto> GetUserCountsAsync();
         Task BroadcastUserCountsAsync();
+        Task<DeleteUserResponse> DeleteUserAsync(int userId);
     }
 }

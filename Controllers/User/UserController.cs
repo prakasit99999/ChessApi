@@ -119,6 +119,33 @@ namespace ChessApi.Controllers.User
         }
 
         /// <summary>
+        /// Admin ลบ User ใดๆ ตาม ID (DELETE /api/user/{id})
+        /// เฉพาะ Admin เท่านั้น
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{id:int}")]
+        public async Task<IActionResult> AdminDeleteUser([FromRoute] int id)
+        {
+            if (id <= 0)
+            {
+                return BadRequest(new { message = "Invalid user id", success = false });
+            }
+
+            var result = await _userService.DeleteUserAsync(id);
+            if (!result.Success)
+            {
+                if (result.Message?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true)
+                {
+                    return NotFound(result);
+                }
+
+                return BadRequest(result);
+            }
+
+            return Ok(result);
+        }
+
+        /// <summary>
         /// ดึงรายชื่อ User แบบแบ่งหน้า (Pagination) สำหรับตารางใน Frontend
         /// รองรับ pageNumber, pageSize และ search (ค้นหา username/email)
         /// </summary>
